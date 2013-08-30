@@ -136,18 +136,35 @@ describe('fogbugz module', function () {
       fogbugz.listFilters()
           .then(function (res) {
             expect(res).toEqual([
-              {"name": "My Cases", "type": "builtin", "id": "ez", "url": "https://zzz.fogbugz.com/default.asp?pgx=LF&ixFilter=ez"},
-              {"name": "Inbox", "type": "builtin", "id": "inbox", "url": "https://zzz.fogbugz.com/default.asp?pgx=LF&ixFilter=inbox"}
-            ]
-            );
+              new fogbugz.Filter({"name": "My Cases", "type": "builtin", "id": "ez", "url": "https://zzz.fogbugz.com/default.asp?pgx=LF&ixFilter=ez"}),
+              new fogbugz.Filter({"name": "Inbox", "type": "builtin", "id": "inbox", "url": "https://zzz.fogbugz.com/default.asp?pgx=LF&ixFilter=inbox"})
+            ]);
           }, function () {
             expect(true).toBe(false);
           })
           .finally(fogbugz.forgetToken)
           .finally(done);
-
     });
   });
 
+  describe('setCurrentFilter method', function (done) {
+    var xml = '<response></response>',
+        request = jasmine.createSpy('request')
+            .andCallFake(function (url, cb) {
+              cb(null, null, xml);
+            }),
+        fogbugz = loadModule('./lib/fogbugz.js',
+            {
+              request: request,
+              '../fogbugz.conf.json': require('./fogbugz-example.conf.json')
+            }).module.exports;
+    fogbugz.setToken('capybara');
+    fogbugz.setCurrentFilter('ez')
+        .then(function (res) {
+          expect(res).toBe(true);
+        })
+        .finally(fogbugz.forgetToken)
+        .finally(done);
+  });
 
 });
