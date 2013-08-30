@@ -13,7 +13,7 @@
 var request = require('request'),
     Q = require('q'),
     fs = require('fs'),
-    conf = require(__dirname + '/fogbugz.conf.json'),
+    conf = require(process.env.PWD + '/fogbugz.conf.json'),
     format = require('util').format,
     extend = require('util')._extend,
     xml2js = require('xml2js'),

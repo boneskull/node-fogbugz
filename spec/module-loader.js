@@ -23,11 +23,16 @@ exports.loadModule = function (filePath, mocks) {
   };
 
   var exports = {};
+
   var context = {
     require: function (name) {
       return mocks[name] || require(resolveModule(name));
     },
-    __dirname: __dirname,
+    process: {
+      env: {
+        PWD: path.dirname(module.filename)
+      }
+    },
     console: console,
     exports: exports,
     module: {
