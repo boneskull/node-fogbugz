@@ -1,6 +1,14 @@
 {
   "name": "node-fogbugz",
   "version": "0.0.1",
+  "description": "FogBugz integration module",
+  "license": "MIT",
+  "author": {
+    "name": "Christopher Hiller",
+    "email": "chiller@badwing.com",
+    "url": "http://badwing.com"
+  },
+  "repository": "https://github.com/boneskull/node-fogbugz.git",
   "devDependencies": {
     "jasmine-node": "~1.11.0",
     "grunt": "~0.4.1",

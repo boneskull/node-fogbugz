@@ -147,24 +147,57 @@ describe('fogbugz module', function () {
     });
   });
 
-  describe('setCurrentFilter method', function (done) {
-    var xml = '<response></response>',
-        request = jasmine.createSpy('request')
-            .andCallFake(function (url, cb) {
-              cb(null, null, xml);
-            }),
-        fogbugz = loadModule('./lib/fogbugz.js',
-            {
-              request: request,
-              '../fogbugz.conf.json': require('./fogbugz-example.conf.json')
-            }).module.exports;
-    fogbugz.setToken('capybara');
-    fogbugz.setCurrentFilter('ez')
-        .then(function (res) {
-          expect(res).toBe(true);
-        })
-        .finally(fogbugz.forgetToken)
-        .finally(done);
+  describe('setCurrentFilter method', function () {
+    it('shoud set the current filter', function (done) {
+      var xml = '<response></response>',
+          request = jasmine.createSpy('request')
+              .andCallFake(function (url, cb) {
+                cb(null, null, xml);
+              }),
+          fogbugz = loadModule('./lib/fogbugz.js',
+              {
+                request: request,
+                '../fogbugz.conf.json': require('./fogbugz-example.conf.json')
+              }).module.exports;
+      fogbugz.setToken('capybara');
+      fogbugz.setCurrentFilter('ez')
+          .then(function (res) {
+            expect(res).toBe(true);
+          })
+          .finally(fogbugz.forgetToken)
+          .finally(done);
+    });
+
+  });
+
+  describe('search method', function () {
+    it('should perform a search', function (done) {
+      var xml = '<response><cases count="7"><case ixBug="16006" operations="edit,assign,resolve,email,remind"><sTitle><![CDATA[AQ toolkit API: bar chart shown and selected for text]]></sTitle><sStatus><![CDATA[ Active ]]></sStatus></case></cases></response>',
+          request = jasmine.createSpy('request')
+              .andCallFake(function (url, cb) {
+                cb(null, null, xml);
+              }),
+          fogbugz = loadModule('./lib/fogbugz.js',
+              {
+                request: request,
+                '../fogbugz.conf.json': require('./fogbugz-example.conf.json')
+              }).module.exports;
+
+      fogbugz.setToken('capybara');
+      fogbugz.search('aq api')
+          .then(function (res) {
+            expect(res).toEqual([
+              new fogbugz.Case({"status": "Active", "title": "AQ toolkit API: bar chart shown and selected for text", "operations":
+                      ["edit", "assign", "resolve", "email", "remind"
+                      ], "id": "16006", url: "https://zzz.fogbugz.com/default.asp?16006"}
+              )]);
+          }, function (err) {
+            expect(true).toBe(false);
+          })
+          .finally(fogbugz.forgetToken)
+          .finally(done);
+
+    });
   });
 
 });
