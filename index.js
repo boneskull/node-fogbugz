@@ -4,10 +4,42 @@
  * @module fogbugz
  * @title node-fogbugz
  * @overview Provides FogBugz API functionality.
- This is still in development as the API has not fully been built out yet, but
- I hope to get everything in place eventually.
- * @author Christopher Hiller
- * @version 0.1.0
+
+This is still in development as the API has not fully been built out yet, but
+I hope to get everything in place eventually.
+
+Installation
+============
+```
+npm install fogbugz
+```
+
+Configuration
+=============
+Create a `fogbugz.conf.json` in your app's root directory.  It should look like this:
+
+```json
+{
+  "host": "zzz.fogbugz.com",
+  "username": "zzz@yyy.com",
+  "password": "Password1"
+}
+```
+
+Usage
+=====
+```javascript
+var fogbugz = require('fogbugz');
+fogbugz.logon()
+ .then(function() {
+   return fogbugz.getBug('12345');
+ })
+ .then(function(bug) {
+    console.log(bug.title);
+ });
+```
+ * @author Christopher Hiller <chiller@badwing.com>
+ * @version 0.1.7
  * @license MIT
  */
 var request = require('request'),
@@ -342,6 +374,7 @@ var fogbugz = {
    */
   search: function search(query, cols, max) {
     var token = cache.get('token'),
+        cases,
         dfrd = Q.defer(),
         extractCases = function extractCases(xml) {
           var parser = xml2js.Parser(), r;
@@ -357,7 +390,7 @@ var fogbugz = {
             r = res;
           });
           if (r) {
-            return r.response.cases[0]['case'].map(function (kase) {
+            cases = r.response.cases[0]['case'].map(function (kase) {
               return new Case({
                 id: kase.$.ixBug,
                 operations: kase.$.operations.split(','),
@@ -367,6 +400,10 @@ var fogbugz = {
                     kase.$.ixBug)
               });
             });
+            if(cases.length > 1) {
+              return cases;
+            }
+            return cases[0];
           }
         };
     cols = (cols || DEFAULT_COLS).join(',');

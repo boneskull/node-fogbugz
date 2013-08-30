@@ -1,10 +1,42 @@
 node-fogbugz
 ============
-**Author:** Christopher Hiller
+**Author:** Christopher Hiller <chiller@badwing.com>
 
 **Overview:** Provides FogBugz API functionality.
+
 This is still in development as the API has not fully been built out yet, but
 I hope to get everything in place eventually.
+
+Installation
+============
+```
+npm install fogbugz
+```
+
+Configuration
+=============
+Create a `fogbugz.conf.json` in your app's root directory.  It should look like this:
+
+```json
+{
+  "host": "zzz.fogbugz.com",
+  "username": "zzz@yyy.com",
+  "password": "Password1"
+}
+```
+
+Usage
+=====
+```javascript
+var fogbugz = require('fogbugz');
+fogbugz.logon()
+ .then(function() {
+   return fogbugz.getBug('12345');
+ })
+ .then(function(bug) {
+    console.log(bug.title);
+ });
+```
 
 module fogbugz
 ==============
@@ -43,12 +75,12 @@ Logs you into FogBugz based on contents of `fogbugz.conf.json`.
 fogbugz.listFilters()
 ---------------------
 Retrieves a list of Filters as an array.  Each item in the array is of type Filter.  Example:
-```
- [{"name": "My Cases", "type": "builtin", "id": "ez",
+   ```
+   [{"name": "My Cases", "type": "builtin", "id": "ez",
     "url": "https://zzz.fogbugz.com/default.asp?pgx=LF&ixFilter=ez"}),
-  {"name": "Inbox", "type": "builtin", "id": "inbox",
-    "url": "https://zzz.fogbugz.com/default.asp?pgx=LF&ixFilter=inbox"}]
-```
+   {"name": "Inbox", "type": "builtin", "id": "inbox",
+     "url": "https://zzz.fogbugz.com/default.asp?pgx=LF&ixFilter=inbox"}]
+   ```
 
 **Returns**
 
@@ -85,6 +117,16 @@ Performs a search against FogBugz's cases
 **Returns**
 
 *Function|promise|Q.promise*,  Promise
+
+fogbugz.getBug(id, \[cols\])
+----------------------------
+Gets a bug by ID
+
+**Parameters**
+
+**id**:  *string|number*,  ID of bug
+
+**[cols]**:  *number*,  Cols to pull; defaults to everything
 
 class fogbugz.Filter
 --------------------
