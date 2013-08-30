@@ -1,6 +1,6 @@
 {
-  "name": "node-fogbugz",
-  "version": "0.1.0",
+  "name": "fogbugz",
+  "version": "0.1.5",
   "description": "FogBugz integration module",
   "license": "MIT",
   "author": {

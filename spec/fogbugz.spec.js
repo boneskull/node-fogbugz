@@ -16,12 +16,11 @@ describe('fogbugz module', function () {
               .andCallFake(function (url, cb) {
                 cb(msg);
               }),
-          fogbugz = loadModule('./lib/fogbugz.js',
-              {
-                request: request,
-                '../fogbugz.conf.json': './fogbugz-example.conf.json'
-              }).module.exports;
-
+          mocks = {
+            request: request
+          },
+          fogbugz;
+      fogbugz = loadModule('./index.js', mocks).module.exports;
       fogbugz.logon()
           .then(function () {
             expect(true).toBe(false);
@@ -40,11 +39,11 @@ describe('fogbugz module', function () {
               .andCallFake(function (url, cb) {
                 cb(null, null, xml);
               }),
-          fogbugz = loadModule('./lib/fogbugz.js',
-              {
-                request: request,
-                '../fogbugz.conf.json': require('./fogbugz-example.conf.json')
-              }).module.exports;
+          mocks = {
+            request: request
+          },
+          fogbugz;
+      fogbugz = loadModule('./index.js', mocks).module.exports;
 
       fogbugz.logon()
           .then(function (res) {
@@ -63,10 +62,9 @@ describe('fogbugz module', function () {
 
   describe('logoff method', function (done) {
     it('should fail w/o presence of token', function () {
-      var fogbugz = loadModule('./lib/fogbugz.js', {
-        '../fogbugz.conf.json': require('./fogbugz-example.conf.json')
-      }).module.exports;
-
+      var mocks = {},
+          fogbugz;
+      fogbugz = loadModule('./index.js', mocks).module.exports;
       fogbugz.logoff()
           .then(function () {
             expect(true).toBe(false);
@@ -83,11 +81,11 @@ describe('fogbugz module', function () {
               .andCallFake(function (url, cb) {
                 cb(msg);
               }),
-          fogbugz = loadModule('./lib/fogbugz.js',
-              {
-                request: request,
-                '../fogbugz.conf.json': require('./fogbugz-example.conf.json')
-              }).module.exports;
+          mocks = {
+            request: request
+          },
+          fogbugz;
+      fogbugz = loadModule('./index.js', mocks).module.exports;
       fogbugz.setToken('capybara');
       fogbugz.logoff()
           .then(function () {
@@ -104,11 +102,11 @@ describe('fogbugz module', function () {
               .andCallFake(function (url, cb) {
                 cb();
               }),
-          fogbugz = loadModule('./lib/fogbugz.js',
-              {
-                request: request,
-                '../fogbugz.conf.json': require('./fogbugz-example.conf.json')
-              }).module.exports;
+          mocks = {
+            request: request
+          },
+          fogbugz;
+      fogbugz = loadModule('./index.js', mocks).module.exports;
       fogbugz.setToken('capybara');
       fogbugz.logoff()
           .then(function (res) {
@@ -127,11 +125,11 @@ describe('fogbugz module', function () {
               .andCallFake(function (url, cb) {
                 cb(null, null, filtersXml);
               }),
-          fogbugz = loadModule('./lib/fogbugz.js', {
-            request: request,
-            '../fogbugz.conf.json': require('./fogbugz-example.conf.json')
-          }).module.exports;
-
+          mocks = {
+            request: request
+          },
+          fogbugz;
+      fogbugz = loadModule('./index.js', mocks).module.exports;
       fogbugz.setToken('capybara');
       fogbugz.listFilters()
           .then(function (res) {
@@ -154,11 +152,11 @@ describe('fogbugz module', function () {
               .andCallFake(function (url, cb) {
                 cb(null, null, xml);
               }),
-          fogbugz = loadModule('./lib/fogbugz.js',
-              {
-                request: request,
-                '../fogbugz.conf.json': require('./fogbugz-example.conf.json')
-              }).module.exports;
+          mocks = {
+            request: request
+          },
+          fogbugz;
+      fogbugz = loadModule('./index.js', mocks).module.exports;
       fogbugz.setToken('capybara');
       fogbugz.setCurrentFilter('ez')
           .then(function (res) {
@@ -177,14 +175,13 @@ describe('fogbugz module', function () {
               .andCallFake(function (url, cb) {
                 cb(null, null, xml);
               }),
-          fogbugz = loadModule('./lib/fogbugz.js',
+          fogbugz = loadModule('./index.js',
               {
                 request: request,
-                '../fogbugz.conf.json': require('./fogbugz-example.conf.json')
               }).module.exports;
 
       fogbugz.setToken('capybara');
-      fogbugz.search('aq api')
+      fogbugz.search('16227')
           .then(function (res) {
             expect(res).toEqual([
               new fogbugz.Case({"status": "Active", "title": "AQ toolkit API: bar chart shown and selected for text", "operations":
@@ -192,6 +189,7 @@ describe('fogbugz module', function () {
                       ], "id": "16006", url: "https://zzz.fogbugz.com/default.asp?16006"}
               )]);
           }, function (err) {
+            console.error(err);
             expect(true).toBe(false);
           })
           .finally(fogbugz.forgetToken)

@@ -4,15 +4,16 @@
  * @module fogbugz
  * @title node-fogbugz
  * @overview Provides FogBugz API functionality.
-This is still in development as the API has not fully been built out yet, but
-I hope to get everything in place eventually.
+ This is still in development as the API has not fully been built out yet, but
+ I hope to get everything in place eventually.
  * @author Christopher Hiller
  * @version 0.1.0
  * @license MIT
  */
 var request = require('request'),
     Q = require('q'),
-    conf = require('../fogbugz.conf.json'),
+    fs = require('fs'),
+    conf = require(__dirname + '/fogbugz.conf.json'),
     format = require('util').format,
     extend = require('util')._extend,
     xml2js = require('xml2js'),
@@ -46,8 +47,65 @@ var MODULE_ERRORS = {
   unknown: 'unknown error'
 };
 
+var COLS = [
+  'ixBug',
+  'isBugParent',
+  'ixBugChildren',
+  'tags',
+  'fOpen',
+  'sTitle',
+  'sOriginalTitle',
+  'sLatestTextSummary',
+  'ixBugEventlatestText',
+  'ixProject',
+  'sProject',
+  'ixArea',
+  'sArea',
+  'ixGroup',
+  'ixPersonAssignedTo',
+  'sPersonAssignedTo',
+  'sEmailAssignedTo',
+  'ixPersonOpenedBy',
+  'ixPersonResolvedBy',
+  'iPersonClosedBy',
+  'ixPersonLastEditedBy',
+  'ixStatus',
+  'sStatus',
+  'ixPriority',
+  'sPriority',
+  'ixFixFor',
+  'sFixFor',
+  'dFixFor',
+  'sVersion',
+  'sComputer',
+  'hrsOrigEst',
+  'hrsCurrentEst',
+  'hrsElapsed',
+  'ixMailbox',
+  'ixCategory',
+  'sCategory',
+  'dtOpened',
+  'dtResolved',
+  'dtClosed',
+  'ixBugEventLatest',
+  'dtLastUpdated',
+  'fReplied',
+  'fForwarded',
+  'sTicket',
+  'ixDiscussTopic',
+  'dtDue',
+  'sReleaseNotes',
+  'ixBugEventLastView',
+  'dtLastView',
+  'ixRelatedBugs',
+  'sScoutDescription',
+  'sScoutMessage',
+  'fScoutStopReportin',
+  'fSubscribed'
+];
+
 /**
- * Default cols to pull when querying cases
+ * Default fields to pull when querying cases
  * @type {Array}
  */
 var DEFAULT_COLS = [
@@ -182,12 +240,12 @@ var fogbugz = {
 
   /**
    * Retrieves a list of Filters as an array.  Each item in the array is of type Filter.  Example:
-```
- [{"name": "My Cases", "type": "builtin", "id": "ez",
+   ```
+   [{"name": "My Cases", "type": "builtin", "id": "ez",
     "url": "https://zzz.fogbugz.com/default.asp?pgx=LF&ixFilter=ez"}),
-  {"name": "Inbox", "type": "builtin", "id": "inbox",
-    "url": "https://zzz.fogbugz.com/default.asp?pgx=LF&ixFilter=inbox"}]
-```
+   {"name": "Inbox", "type": "builtin", "id": "inbox",
+     "url": "https://zzz.fogbugz.com/default.asp?pgx=LF&ixFilter=inbox"}]
+   ```
    * @method listFilters
    * @see class fogbugz.Filter
    * @returns {Function|promise|Q.promise} Promise
@@ -336,6 +394,16 @@ var fogbugz = {
     }
     return dfrd.promise;
 
+  },
+
+  /**
+   * Gets a bug by ID
+   * @param {string|number} id ID of bug
+   * @param {number} [cols] Cols to pull; defaults to everything
+   * @returns {Function|promise|Q.promise}
+   */
+  getBug: function getBug(id, cols) {
+    return this.search(id, cols || COLS, 1);
   }
 };
 
