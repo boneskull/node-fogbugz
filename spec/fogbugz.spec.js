@@ -177,7 +177,7 @@ describe('fogbugz module', function () {
               }),
           fogbugz = loadModule('./index.js',
               {
-                request: request,
+                request: request
               }).module.exports;
 
       fogbugz.setToken('capybara');

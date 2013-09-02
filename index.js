@@ -5,51 +5,51 @@
  * @title node-fogbugz
  * @overview Provides FogBugz API functionality.
 
-This is still in development as the API has not fully been built out yet, but
-I hope to get everything in place eventually.
+ This is still in development as the API has not fully been built out yet, but
+ I hope to get everything in place eventually.
 
-Installation
-============
-```
-npm install fogbugz
-```
+ Installation
+ ============
+ ```
+ npm install fogbugz
+ ```
 
-Configuration
-=============
-Create a `fogbugz.conf.json` in your app's root directory.  It should look like this:
+ Configuration
+ =============
+ Create a `fogbugz.conf.json` in your app's root directory.  It should look like this:
 
-```json
-{
-  "host": "zzz.fogbugz.com",
-  "username": "zzz@yyy.com",
-  "password": "Password1"
-}
-```
+ ```json
+ {
+   "host": "zzz.fogbugz.com",
+   "username": "zzz@yyy.com",
+ "password": "Password1"
+ }
+ ```
 
-Usage
-=====
-```javascript
-var fogbugz = require('fogbugz');
-fogbugz.logon()
+ Usage
+ =====
+ ```javascript
+ var fogbugz = require('fogbugz');
+ fogbugz.logon()
  .then(function() {
    return fogbugz.getBug('12345');
  })
  .then(function(bug) {
     console.log(bug.title);
  });
-```
+ ```
  * @author Christopher Hiller <chiller@badwing.com>
  * @version 0.1.7
  * @license MIT
  */
 var request = require('request'),
-    Q = require('q'),
-    fs = require('fs'),
-    conf = require(process.env.PWD + '/fogbugz.conf.json'),
-    format = require('util').format,
-    extend = require('util')._extend,
-    xml2js = require('xml2js'),
-    cache = require('memory-cache');
+  Q = require('q'),
+  fs = require('fs'),
+  conf = require(process.env.PWD + '/fogbugz.conf.json'),
+  format = require('util').format,
+  extend = require('util')._extend,
+  xml2js = require('xml2js'),
+  cache = require('memory-cache');
 
 /**
  * Default protocol
@@ -79,61 +79,65 @@ var MODULE_ERRORS = {
   unknown: 'unknown error'
 };
 
+/**
+ * All possible fields returned for a case
+ * @type {Array}
+ */
 var COLS = [
-  'ixBug',
-  'isBugParent',
-  'ixBugChildren',
-  'tags',
-  'fOpen',
-  'sTitle',
-  'sOriginalTitle',
-  'sLatestTextSummary',
-  'ixBugEventlatestText',
-  'ixProject',
-  'sProject',
-  'ixArea',
-  'sArea',
-  'ixGroup',
-  'ixPersonAssignedTo',
-  'sPersonAssignedTo',
-  'sEmailAssignedTo',
-  'ixPersonOpenedBy',
-  'ixPersonResolvedBy',
-  'iPersonClosedBy',
-  'ixPersonLastEditedBy',
-  'ixStatus',
-  'sStatus',
-  'ixPriority',
-  'sPriority',
-  'ixFixFor',
-  'sFixFor',
   'dFixFor',
-  'sVersion',
-  'sComputer',
-  'hrsOrigEst',
-  'hrsCurrentEst',
-  'hrsElapsed',
-  'ixMailbox',
-  'ixCategory',
-  'sCategory',
+  'dtClosed',
+  'dtDue',
+  'dtLastUpdated',
+  'dtLastView',
   'dtOpened',
   'dtResolved',
-  'dtClosed',
-  'ixBugEventLatest',
-  'dtLastUpdated',
-  'fReplied',
   'fForwarded',
-  'sTicket',
-  'ixDiscussTopic',
-  'dtDue',
-  'sReleaseNotes',
+  'fOpen',
+  'fReplied',
+  'fScoutStopReporting',
+  'fSubscribed',
+  'hrsCurrentEst',
+  'hrsElapsed',
+  'hrsOrigEst',
+  'iPersonClosedBy',
+  'isBugParent',
+  'ixArea',
+  'ixBug',
+  'ixBugChildren',
   'ixBugEventLastView',
-  'dtLastView',
+  'ixBugEventLatest',
+  'ixBugEventlatestText',
+  'ixCategory',
+  'ixDiscussTopic',
+  'ixFixFor',
+  'ixGroup',
+  'ixMailbox',
+  'ixPersonAssignedTo',
+  'ixPersonLastEditedBy',
+  'ixPersonOpenedBy',
+  'ixPersonResolvedBy',
+  'ixPriority',
+  'ixProject',
   'ixRelatedBugs',
+  'ixStatus',
+  'sArea',
+  'sCategory',
+  'sComputer',
+  'sEmailAssignedTo',
+  'sFixFor',
+  'sLatestTextSummary',
+  'sOriginalTitle',
+  'sPersonAssignedTo',
+  'sPriority',
+  'sProject',
+  'sReleaseNotes',
   'sScoutDescription',
   'sScoutMessage',
-  'fScoutStopReportin',
-  'fSubscribed'
+  'sStatus',
+  'sTicket',
+  'sTitle',
+  'sVersion',
+  'tags'
 ];
 
 /**
@@ -142,7 +146,11 @@ var COLS = [
  */
 var DEFAULT_COLS = [
   'sTitle',
-  'sStatus'
+  'sStatus',
+  'sPersonAssignedTo',
+  'sFixFor',
+  'tags',
+  'sEmailAssignedTo'
 ];
 
 /**
@@ -197,19 +205,19 @@ var fogbugz = {
    */
   logoff: function logoff() {
     var token = cache.get('token'),
-        dfrd = Q.defer();
+      dfrd = Q.defer();
     if (!token) {
       dfrd.reject(MODULE_ERRORS.undefined_token);
     } else {
       request(format(URLs.logoff, PROTOCOL, conf.host, token),
-          function (err) {
-            if (err) {
-              dfrd.reject(err);
-            }
-            else {
-              dfrd.resolve(true);
-            }
-          })
+        function (err) {
+          if (err) {
+            dfrd.reject(err);
+          }
+          else {
+            dfrd.resolve(true);
+          }
+        })
     }
     return dfrd.promise;
   },
@@ -221,23 +229,23 @@ var fogbugz = {
    */
   logon: function logon() {
     var dfrd = Q.defer(),
-        extractToken = function extractToken(xml) {
-          var parser = new xml2js.Parser(), r;
-          parser.parseString(xml, function (err, res) {
-            if (err) {
-              dfrd.reject(MODULE_ERRORS.xml_parse_error);
-              return;
-            }
-            if (res.response.error) {
-              dfrd.reject(res.response.error);
-              return;
-            }
-            r = res;
-          });
-          if (r) {
-            return r.response.token[0];
+      extractToken = function extractToken(xml) {
+        var parser = new xml2js.Parser(), r;
+        parser.parseString(xml, function (err, res) {
+          if (err) {
+            dfrd.reject(MODULE_ERRORS.xml_parse_error);
+            return;
           }
-        }, token = cache.get('token');
+          if (res.response.error) {
+            dfrd.reject(res.response.error);
+            return;
+          }
+          r = res;
+        });
+        if (r) {
+          return r.response.token[0];
+        }
+      }, token = cache.get('token');
 
     if (token) {
       dfrd.resolve({
@@ -247,26 +255,26 @@ var fogbugz = {
     }
 
     request(format(URLs.logon, PROTOCOL, conf.host, conf.username,
-        conf.password),
-        function (err, res, body) {
-          var token;
-          if (err) {
-            dfrd.reject(err);
+      conf.password),
+      function (err, res, body) {
+        var token;
+        if (err) {
+          dfrd.reject(err);
+        }
+        else {
+          token = extractToken(body);
+          if (!token) {
+            dfrd.reject(MODULE_ERRORS.unknown);
           }
           else {
-            token = extractToken(body);
-            if (!token) {
-              dfrd.reject(MODULE_ERRORS.unknown);
-            }
-            else {
-              cache.put('token', token);
-              dfrd.resolve({
-                token: token,
-                cached: false
-              });
-            }
+            cache.put('token', token);
+            dfrd.resolve({
+              token: token,
+              cached: false
+            });
           }
-        });
+        }
+      });
     return dfrd.promise;
   },
 
@@ -284,52 +292,52 @@ var fogbugz = {
    */
   listFilters: function listFilters() {
     var token = cache.get('token'),
-        dfrd = Q.defer(),
-        extractFilters = function extractFilters(xml) {
-          var parser = xml2js.Parser(), r;
-          parser.parseString(xml, function (err, res) {
-            if (err) {
-              dfrd.reject(MODULE_ERRORS.xml_parse_error);
-              return;
-            }
-            if (res.response.error) {
-              dfrd.reject(res.response.error);
-              return;
-            }
-            r = res;
-          });
-          if (r) {
-            return r.response.filters[0].filter
-                .map(function (filter) {
-                  return new Filter({
-                    name: filter._.trim(),
-                    type: filter.$.type,
-                    id: filter.$.sFilter,
-                    url: format('%s://%s/default.asp?pgx=LF&ixFilter=%s',
-                        PROTOCOL, conf.host, filter.$.sFilter)
-                  });
-                });
+      dfrd = Q.defer(),
+      extractFilters = function extractFilters(xml) {
+        var parser = xml2js.Parser(), r;
+        parser.parseString(xml, function (err, res) {
+          if (err) {
+            dfrd.reject(MODULE_ERRORS.xml_parse_error);
+            return;
           }
-        };
+          if (res.response.error) {
+            dfrd.reject(res.response.error);
+            return;
+          }
+          r = res;
+        });
+        if (r) {
+          return r.response.filters[0].filter
+            .map(function (filter) {
+              return new Filter({
+                name: filter._.trim(),
+                type: filter.$.type,
+                id: filter.$.sFilter,
+                url: format('%s://%s/default.asp?pgx=LF&ixFilter=%s',
+                  PROTOCOL, conf.host, filter.$.sFilter)
+              });
+            });
+        }
+      };
 
     if (!token) {
       dfrd.reject(MODULE_ERRORS.undefined_token);
     } else {
       request(format(URLs.listFilters, PROTOCOL, conf.host, token),
-          function (err, res, body) {
-            var filters;
-            if (err) {
-              dfrd.reject(err);
+        function (err, res, body) {
+          var filters;
+          if (err) {
+            dfrd.reject(err);
+          }
+          else {
+            filters = extractFilters(body);
+            if (filters && filters.length) {
+              dfrd.resolve(extractFilters(body));
+            } else {
+              dfrd.reject(MODULE_ERRORS.unknown);
             }
-            else {
-              filters = extractFilters(body);
-              if (filters && filters.length) {
-                dfrd.resolve(extractFilters(body));
-              } else {
-                dfrd.reject(MODULE_ERRORS.unknown);
-              }
-            }
-          });
+          }
+        });
     }
     return dfrd.promise;
 
@@ -344,14 +352,14 @@ var fogbugz = {
    */
   setCurrentFilter: function setCurrentFilter(filter) {
     var token = cache.get('token'),
-        dfrd = Q.defer(), id;
+      dfrd = Q.defer(), id;
     if (!token) {
       dfrd.reject(MODULE_ERRORS.undefined_token);
     }
     else {
       id = typeof filter === 'string' ? filter : filter.id;
       request(format(URLs.setCurrentFilter, PROTOCOL, conf.host, id,
-          token), function (err, res, body) {
+        token), function (err, res, body) {
         if (err) {
           dfrd.reject(err)
         }
@@ -374,60 +382,73 @@ var fogbugz = {
    */
   search: function search(query, cols, max) {
     var token = cache.get('token'),
-        cases,
-        dfrd = Q.defer(),
-        extractCases = function extractCases(xml) {
-          var parser = xml2js.Parser(), r;
-          parser.parseString(xml, function (err, res) {
-            if (err) {
-              dfrd.reject(MODULE_ERRORS.xml_parse_error);
-              return;
-            }
-            if (res.response.error) {
-              dfrd.reject(res.response.error);
-              return;
-            }
-            r = res;
-          });
-          if (r) {
-            cases = r.response.cases[0]['case'].map(function (kase) {
-              return new Case({
-                id: kase.$.ixBug,
-                operations: kase.$.operations.split(','),
-                title: kase.sTitle[0].trim(),
-                status: kase.sStatus[0].trim(),
-                url: format('%s://%s/default.asp?%s', PROTOCOL, conf.host,
-                    kase.$.ixBug)
-              });
-            });
-            if(cases.length > 1) {
-              return cases;
-            }
-            return cases[0];
+      cases, fields,
+      dfrd = Q.defer(),
+      extractCases = function extractCases(xml) {
+        var parser = xml2js.Parser(), r;
+        parser.parseString(xml, function (err, res) {
+          if (err) {
+            dfrd.reject(MODULE_ERRORS.xml_parse_error);
+            return;
           }
-        };
-    cols = (cols || DEFAULT_COLS).join(',');
+          if (res.response.error) {
+            dfrd.reject(res.response.error);
+            return;
+          }
+          r = res;
+        });
+        if (!r || !r.response || !r.response.cases.length || !r.response.cases[0]['case']) {
+          return dfrd.reject('could not find bug');
+        }
+        else {
+          cases = r.response.cases[0]['case'].map(function (kase) {
+            var bug = new Case({
+              id: kase.$.ixBug,
+              operations: kase.$.operations.split(','),
+              title: kase.sTitle[0].trim(),
+              status: kase.sStatus[0].trim(),
+              url: format('%s://%s/default.asp?%s', PROTOCOL, conf.host,
+                kase.$.ixBug),
+              fixFor: kase.sFixFor[0].trim()
+            });
+            if (kase.sPersonAssignedTo) {
+              bug.assignedTo = kase.sPersonAssignedTo[0].trim();
+              bug.assignedToEmail = kase.sEmailAssignedTo[0].trim();
+            }
+            if (kase.tags && kase.tags[0].tag) {
+              bug.tags = kase.tags[0].tag.join(', ');
+            }
+            return bug;
+          });
+          if (cases.length > 1) {
+            return cases;
+          }
+          return cases[0];
+        }
+      };
+    fields = (cols || DEFAULT_COLS).join(',');
     max = max || DEFAULT_MAX;
     query = encodeURIComponent(query);
     if (!token) {
       dfrd.reject(MODULE_ERRORS.undefined_token);
     } else {
-      request(format(URLs.search, PROTOCOL, conf.host, query, cols, max,
-          token),
-          function (err, res, body) {
-            var cases;
-            if (err) {
-              dfrd.reject(err);
-            } else {
-              cases = extractCases(body);
-              if (!cases) {
-                dfrd.reject(MODULE_ERRORS.unknown);
-              }
-              else {
-                dfrd.resolve(cases);
-              }
-            }
-          });
+      var url = format(URLs.search, PROTOCOL, conf.host, query, fields, max,
+        token);
+      request(url, function (err, res, body) {
+        var cases;
+        if (err) {
+          dfrd.reject(err);
+        } else {
+          cases = extractCases(body);
+          if (!cases) {
+            console.error(body);
+            dfrd.reject(MODULE_ERRORS.unknown);
+          }
+          else {
+            dfrd.resolve(cases);
+          }
+        }
+      });
     }
     return dfrd.promise;
 
@@ -436,11 +457,11 @@ var fogbugz = {
   /**
    * Gets a bug by ID
    * @param {string|number} id ID of bug
-   * @param {number} [cols] Cols to pull; defaults to everything
+   * @param {number} [cols] Cols to pull
    * @returns {Function|promise|Q.promise}
    */
   getBug: function getBug(id, cols) {
-    return this.search(id, cols || COLS, 1);
+    return this.search(id, cols, 1);
   }
 };
 
