@@ -1,6 +1,6 @@
 {
   "name": "fogbugz",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "FogBugz integration module",
   "license": "MIT",
   "author": {
@@ -8,7 +8,7 @@
     "email": "chiller@badwing.com",
     "url": "http://badwing.com"
   },
-  "repository": "https://github.com/boneskull/node-fogbugz.git",
+  "repository": "git://github.com/boneskull/node-fogbugz.git",
   "devDependencies": {
     "jasmine-node": "~1.11.0",
     "grunt": "~0.4.1",

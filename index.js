@@ -177,6 +177,27 @@ var _extractEmptyResponse = function _extractEmptyResponse(xml, dfrd) {
   });
 };
 
+/**
+ * Parses XML and returns JSON.
+ * @param {string} xml XML string
+ * @returns {Object} JSON representation of XML
+ */
+var _parse = function _parse(xml) {
+  var parser = new xml2js.Parser(), r;
+  parser.parseString(xml, function (err, res) {
+    if (err) {
+      dfrd.reject(MODULE_ERRORS.xml_parse_error);
+      return;
+    }
+    if (res.response.error) {
+      dfrd.reject(res.response.error);
+      return;
+    }
+    r = res;
+  });
+  return r;
+};
+
 var fogbugz = {
   MODULE_ERRORS: MODULE_ERRORS,
 
@@ -230,18 +251,7 @@ var fogbugz = {
   logon: function logon() {
     var dfrd = Q.defer(),
       extractToken = function extractToken(xml) {
-        var parser = new xml2js.Parser(), r;
-        parser.parseString(xml, function (err, res) {
-          if (err) {
-            dfrd.reject(MODULE_ERRORS.xml_parse_error);
-            return;
-          }
-          if (res.response.error) {
-            dfrd.reject(res.response.error);
-            return;
-          }
-          r = res;
-        });
+        var r = _parse(xml);
         if (r) {
           return r.response.token[0];
         }
@@ -294,18 +304,7 @@ var fogbugz = {
     var token = cache.get('token'),
       dfrd = Q.defer(),
       extractFilters = function extractFilters(xml) {
-        var parser = xml2js.Parser(), r;
-        parser.parseString(xml, function (err, res) {
-          if (err) {
-            dfrd.reject(MODULE_ERRORS.xml_parse_error);
-            return;
-          }
-          if (res.response.error) {
-            dfrd.reject(res.response.error);
-            return;
-          }
-          r = res;
-        });
+        var r = _parse(xml);
         if (r) {
           return r.response.filters[0].filter
             .map(function (filter) {
@@ -385,19 +384,9 @@ var fogbugz = {
       cases, fields,
       dfrd = Q.defer(),
       extractCases = function extractCases(xml) {
-        var parser = xml2js.Parser(), r;
-        parser.parseString(xml, function (err, res) {
-          if (err) {
-            dfrd.reject(MODULE_ERRORS.xml_parse_error);
-            return;
-          }
-          if (res.response.error) {
-            dfrd.reject(res.response.error);
-            return;
-          }
-          r = res;
-        });
-        if (!r || !r.response || !r.response.cases.length || !r.response.cases[0]['case']) {
+        var r = _parse(xml);
+        if (!r || !r.response || !r.response.cases.length ||
+            !r.response.cases[0]['case']) {
           return dfrd.reject('could not find bug');
         }
         else {
