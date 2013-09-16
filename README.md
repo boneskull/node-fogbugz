@@ -1,4 +1,4 @@
-node-fogbugz
+node-fogbugz [![Build Status](https://travis-ci.org/boneskull/node-fogbugz.png?branch=master)](https://travis-ci.org/boneskull/node-fogbugz)
 ============
 **Author:** Christopher Hiller <chiller@badwing.com>
 
