@@ -1,6 +1,6 @@
 {
   "name": "fogbugz",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "FogBugz integration module",
   "license": "MIT",
   "author": {
@@ -19,5 +19,8 @@
     "q": "~0.9.6",
     "xml2js": "~0.2.8",
     "memory-cache": "0.0.5"
+  },
+  "scripts": {
+    "test": "grunt test"
   }
 }
