@@ -391,7 +391,7 @@ var fogbugz = {
         }
         else {
           cases = r.response.cases[0]['case'].map(function (kase) {
-            var bug = new Case({
+            var data = {
               id: kase.$.ixBug,
               operations: kase.$.operations.split(','),
               title: kase.sTitle[0].trim(),
@@ -399,7 +399,11 @@ var fogbugz = {
               url: format('%s://%s/default.asp?%s', PROTOCOL, conf.host,
                 kase.$.ixBug),
               fixFor: kase.sFixFor[0].trim()
-            });
+            };
+            for(var i = 0, k; i < cols.length, k = cols[i]; i++) {
+              if (typeof kase[k] !== 'undefined') data[k] = kase[k];
+            }
+            var bug = new Case(data);
             if (kase.sPersonAssignedTo) {
               bug.assignedTo = kase.sPersonAssignedTo[0].trim();
               bug.assignedToEmail = kase.sEmailAssignedTo[0].trim();
