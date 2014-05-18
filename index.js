@@ -45,10 +45,12 @@
 var request = require('request'),
   Q = require('q'),
   fs = require('fs'),
-  conf = require(process.env.PWD + '/fogbugz.conf.json'),
+  path = require('path'),
+  conf = require(path.join(process.env.PWD, 'fogbugz.conf.json')),
   format = require('util').format,
   extend = require('util')._extend,
   xml2js = require('xml2js'),
+  _ = require('lodash-node'),
   cache = require('memory-cache');
 
 /**
@@ -265,7 +267,7 @@ var fogbugz = {
     }
 
     request(format(URLs.logon, PROTOCOL, conf.host, conf.username,
-      conf.password),
+        conf.password),
       function (err, res, body) {
         var token;
         if (err) {
@@ -383,15 +385,18 @@ var fogbugz = {
     var token = cache.get('token'),
       cases, fields,
       dfrd = Q.defer(),
+      formatKey = function formatKey(key) {
+        return key.substring(1).charAt(0).toLowerCase() + key.substring(2);
+      },
       extractCases = function extractCases(xml) {
         var r = _parse(xml);
         if (!r || !r.response || !r.response.cases.length ||
-            !r.response.cases[0]['case']) {
+          !r.response.cases[0]['case']) {
           return dfrd.reject('could not find bug');
         }
         else {
           cases = r.response.cases[0]['case'].map(function (kase) {
-            var data = {
+            var bug = new Case({
               id: kase.$.ixBug,
               operations: kase.$.operations.split(','),
               title: kase.sTitle[0].trim(),
@@ -399,11 +404,7 @@ var fogbugz = {
               url: format('%s://%s/default.asp?%s', PROTOCOL, conf.host,
                 kase.$.ixBug),
               fixFor: kase.sFixFor[0].trim()
-            };
-            for(var i = 0, k; i < cols.length, k = cols[i]; i++) {
-              if (typeof kase[k] !== 'undefined') data[k] = kase[k];
-            }
-            var bug = new Case(data);
+            });
             if (kase.sPersonAssignedTo) {
               bug.assignedTo = kase.sPersonAssignedTo[0].trim();
               bug.assignedToEmail = kase.sEmailAssignedTo[0].trim();
@@ -411,6 +412,21 @@ var fogbugz = {
             if (kase.tags && kase.tags[0].tag) {
               bug.tags = kase.tags[0].tag.join(', ');
             }
+            // find anything leftover in the case, disregarding the fields we
+            // already
+            _(kase)
+              .keys()
+              .difference(_.keys(bug).concat('sTitle', 'sStatus', '$',
+                'sFixFor', 'sPersonAssignedTo',
+                'sEmailAssignedTo'))
+              .each(function (key) {
+                var value = kase[key];
+                key = formatKey(key);
+                bug[key] = _.isArray(value) && value.length === 1 ?
+                           bug[key] = value[0].trim() : // dereference
+                           value;
+              });
+            bug._raw = kase;
             return bug;
           });
           if (cases.length > 1) {

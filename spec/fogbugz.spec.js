@@ -170,7 +170,7 @@ describe('fogbugz module', function () {
 
   describe('search method', function () {
     it('should perform a search', function (done) {
-      var xml = '<response><cases count="7"><case ixBug="16006" operations="edit,assign,resolve,email,remind"><sTitle><![CDATA[AQ toolkit API: bar chart shown and selected for text]]></sTitle><sFixFor><![CDATA[whenever]]></sFixFor><sStatus><![CDATA[ Active ]]></sStatus></case></cases></response>',
+      var xml = '<response><cases count="7"><case ixBug="16006" operations="edit,assign,resolve,email,remind"><sTitle><![CDATA[AQ toolkit API: bar chart shown and selected for text]]></sTitle><sFixFor><![CDATA[whenever]]></sFixFor><sStatus><![CDATA[ Active ]]></sStatus><sFooBar><![CDATA[FOO FOO FOO]]></sFooBar></case></cases></response>',
         request = jasmine.createSpy('request')
           .andCallFake(function (url, cb) {
             cb(null, null, xml);
@@ -181,7 +181,7 @@ describe('fogbugz module', function () {
           }).module.exports;
 
       fogbugz.setToken('capybara');
-      fogbugz.search('16227')
+      fogbugz.search('16227', ['sFoo'])
         .then(function (res) {
           expect(res).toEqual(
             new fogbugz.Case({
@@ -190,7 +190,14 @@ describe('fogbugz module', function () {
                 operations: ["edit", "assign", "resolve", "email", "remind"],
                 id: "16006",
                 url: "https://zzz.fogbugz.com/default.asp?16006",
-                fixFor: "whenever"
+                fixFor: "whenever",
+                fooBar: 'FOO FOO FOO',
+                _raw: { '$': { ixBug: '16006',
+                  operations: 'edit,assign,resolve,email,remind' },
+                  sTitle: ['AQ toolkit API: bar chart shown and selected for text'],
+                  sFixFor: ['whenever'],
+                  sStatus: [' Active '],
+                  sFooBar: ['FOO FOO FOO'] }
               }
             ));
         }, function (err) {
