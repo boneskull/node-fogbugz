@@ -104,7 +104,8 @@ Sets the current Filter. I'm not sure what this does exactly.
 
 fogbugz.search(query, \[cols\], \[max\])
 ----------------------------------------
-Performs a search against FogBugz's cases
+Performs a search against FogBugz's cases.  If given custom column `sFooBar`, 
+will massage key into `fooBar`.  Promise resolves to a `Case` object.
 
 **Parameters**
 
@@ -144,7 +145,7 @@ Sets the current filter to be this Filter
 
 class fogbugz.Case
 ------------------
-Case pseudoclass
+Case pseudoclass.  Stores original case data from server in its `_raw` property.
 
 **Parameters**
 
