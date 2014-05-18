@@ -16,3 +16,5 @@ npm-debug.log
 .idea
 fogbugz.conf.json
 output
+node_modules
+
