@@ -181,7 +181,7 @@ describe('fogbugz module', function () {
           }).module.exports;
 
       fogbugz.setToken('capybara');
-      fogbugz.search('16227', ['sFoo'])
+      fogbugz.search('16227', ['sFooBar'])
         .then(function (res) {
           expect(res).toEqual(
             new fogbugz.Case({
@@ -191,7 +191,7 @@ describe('fogbugz module', function () {
                 id: "16006",
                 url: "https://zzz.fogbugz.com/default.asp?16006",
                 fixFor: "whenever",
-                fooBar: 'FOO FOO FOO',
+                sFooBar: 'FOO FOO FOO',
                 _raw: { '$': { ixBug: '16006',
                   operations: 'edit,assign,resolve,email,remind' },
                   sTitle: ['AQ toolkit API: bar chart shown and selected for text'],

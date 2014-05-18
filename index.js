@@ -385,9 +385,6 @@ var fogbugz = {
     var token = cache.get('token'),
       cases, fields,
       dfrd = Q.defer(),
-      formatKey = function formatKey(key) {
-        return key.substring(1).charAt(0).toLowerCase() + key.substring(2);
-      },
       extractCases = function extractCases(xml) {
         var r = _parse(xml);
         if (!r || !r.response || !r.response.cases.length ||
@@ -421,7 +418,6 @@ var fogbugz = {
                 'sEmailAssignedTo'))
               .each(function (key) {
                 var value = kase[key];
-                key = formatKey(key);
                 bug[key] = _.isArray(value) && value.length === 1 ?
                            bug[key] = value[0].trim() : // dereference
                            value;
