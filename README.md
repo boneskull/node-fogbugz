@@ -1,4 +1,4 @@
-node-fogbugz [![NPM version](https://badge.fury.io/js/fogbugz.svg)](http://badge.fury.io/js/fogbugz)[![Build Status](https://travis-ci.org/boneskull/node-fogbugz.png?branch=master)](https://travis-ci.org/boneskull/node-fogbugz)
+node-fogbugz [![NPM version](https://badge.fury.io/js/fogbugz.svg)](http://badge.fury.io/js/fogbugz) [![Build Status](https://travis-ci.org/boneskull/node-fogbugz.png?branch=master)](https://travis-ci.org/boneskull/node-fogbugz)
 ============
 **Author:** [Christopher Hiller](http://boneskull.github.io)
 
