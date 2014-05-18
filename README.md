@@ -1,10 +1,10 @@
-node-fogbugz [![Build Status](https://travis-ci.org/boneskull/node-fogbugz.png?branch=master)](https://travis-ci.org/boneskull/node-fogbugz)
+node-fogbugz [![NPM version](https://badge.fury.io/js/fogbugz.svg)](http://badge.fury.io/js/fogbugz)[![Build Status](https://travis-ci.org/boneskull/node-fogbugz.png?branch=master)](https://travis-ci.org/boneskull/node-fogbugz)
 ============
-**Author:** Christopher Hiller <chiller@badwing.com>
+**Author:** [Christopher Hiller](http://boneskull.github.io)
 
-**Overview:** Provides FogBugz API functionality.
+**Overview:** Library providing FogBugz API functionality.
 
-This is still in development as the API has not fully been built out yet, but
+> This is still in development as the API has not fully been built out yet, but
 I hope to get everything in place eventually.
 
 Installation
