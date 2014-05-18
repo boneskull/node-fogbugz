@@ -10,15 +10,15 @@
   },
   "repository": "git://github.com/boneskull/node-fogbugz.git",
   "devDependencies": {
-    "jasmine-node": "~1.11.0",
-    "grunt": "~0.4.1",
-    "grunt-jasmine-node": "~0.1.0",
-    "grunt-cli": "~0.1.9"
+    "jasmine-node": "^1.11.0",
+    "grunt": "^0.4.1",
+    "grunt-jasmine-node": "^0.1.0",
+    "grunt-cli": "^0.1.9"
   },
   "dependencies": {
-    "request": "~2.27.0",
-    "q": "~0.9.6",
-    "xml2js": "~0.2.8",
+    "request": "^2.27.0",
+    "q": "^0.9.6",
+    "xml2js": "^0.2.8",
     "memory-cache": "0.0.5",
     "lodash-node": "^2.4.1"
   },
@@ -26,6 +26,6 @@
     "test": "grunt test"
   },
   "engines": {
-    "node": ">=0.8"
+    "node": ">=0.10"
   }
 }
