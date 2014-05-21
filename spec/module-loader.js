@@ -30,7 +30,9 @@ exports.loadModule = function (filePath, mocks) {
     },
     process: {
       env: {
-        PWD: path.dirname(module.filename)
+        FOGBUGZ_USERNAME: 'xx-yy@zz.com',
+        FOGBUGZ_PASSWORD: '12345',
+        FOGBUGZ_HOST: 'derp.fogbugz.com'
       }
     },
     console: console,

@@ -8,6 +8,10 @@ var Q = require('q'),
 
 describe('fogbugz module', function () {
 
+  beforeEach(function() {
+
+  });
+
   describe('logon method', function () {
 
     it('should fail if error received', function (done) {
@@ -20,14 +24,14 @@ describe('fogbugz module', function () {
           request: request
         },
         fogbugz;
-      fogbugz = loadModule('./index.js', mocks).module.exports;
+      fogbugz = loadModule('./lib/fogbugz.js', mocks).module.exports;
       fogbugz.logon()
         .then(function () {
           expect(true).toBe(false);
         }, function (err) {
           expect(err).toBe(msg);
         })
-        .finally(fogbugz.forgetToken)
+        .then(fogbugz.forgetToken)
         .finally(done);
     });
 
@@ -43,7 +47,7 @@ describe('fogbugz module', function () {
           request: request
         },
         fogbugz;
-      fogbugz = loadModule('./index.js', mocks).module.exports;
+      fogbugz = loadModule('./lib/fogbugz.js', mocks).module.exports;
 
       fogbugz.logon()
         .then(function (res) {
@@ -64,7 +68,7 @@ describe('fogbugz module', function () {
     it('should fail w/o presence of token', function () {
       var mocks = {},
         fogbugz;
-      fogbugz = loadModule('./index.js', mocks).module.exports;
+      fogbugz = loadModule('./lib/fogbugz.js', mocks).module.exports;
       fogbugz.logoff()
         .then(function () {
           expect(true).toBe(false);
@@ -85,7 +89,7 @@ describe('fogbugz module', function () {
           request: request
         },
         fogbugz;
-      fogbugz = loadModule('./index.js', mocks).module.exports;
+      fogbugz = loadModule('./lib/fogbugz.js', mocks).module.exports;
       fogbugz.setToken('capybara');
       fogbugz.logoff()
         .then(function () {
@@ -106,7 +110,7 @@ describe('fogbugz module', function () {
           request: request
         },
         fogbugz;
-      fogbugz = loadModule('./index.js', mocks).module.exports;
+      fogbugz = loadModule('./lib/fogbugz.js', mocks).module.exports;
       fogbugz.setToken('capybara');
       fogbugz.logoff()
         .then(function (res) {
@@ -129,7 +133,7 @@ describe('fogbugz module', function () {
           request: request
         },
         fogbugz;
-      fogbugz = loadModule('./index.js', mocks).module.exports;
+      fogbugz = loadModule('./lib/fogbugz.js', mocks).module.exports;
       fogbugz.setToken('capybara');
       fogbugz.listFilters()
         .then(function (res) {
@@ -156,7 +160,7 @@ describe('fogbugz module', function () {
           request: request
         },
         fogbugz;
-      fogbugz = loadModule('./index.js', mocks).module.exports;
+      fogbugz = loadModule('./lib/fogbugz.js', mocks).module.exports;
       fogbugz.setToken('capybara');
       fogbugz.setCurrentFilter('ez')
         .then(function (res) {
@@ -170,12 +174,12 @@ describe('fogbugz module', function () {
 
   describe('search method', function () {
     it('should perform a search', function (done) {
-      var xml = '<response><cases count="7"><case ixBug="16006" operations="edit,assign,resolve,email,remind"><sTitle><![CDATA[AQ toolkit API: bar chart shown and selected for text]]></sTitle><sFixFor><![CDATA[whenever]]></sFixFor><sStatus><![CDATA[ Active ]]></sStatus><sFooBar><![CDATA[FOO FOO FOO]]></sFooBar></case></cases></response>',
+      var xml = '<response><cases count="7"><case ixBug="16006" operations="edit,assign,resolve,email,remind"><sTitle><![CDATA[AQ toolkit API: bar chart shown and selected for text]]></sTitle><sFixFor><![CDATA[whenever]]></sFixFor><sStatus><![CDATA[ Active ]]></sStatus><sFooBar><![CDATA[FOO FOO FOO]]></sFooBar></case><case ixBug="18008" operations="edit,assign,resolve,email,remind"><sTitle><![CDATA[AQ toolkit API: bar chart shown and selected for text]]></sTitle><sFixFor><![CDATA[whenever]]></sFixFor><sStatus><![CDATA[ Active ]]></sStatus><sFooBar><![CDATA[FOO FOO FOO]]></sFooBar></case></cases></response>',
         request = jasmine.createSpy('request')
           .andCallFake(function (url, cb) {
             cb(null, null, xml);
           }),
-        fogbugz = loadModule('./index.js',
+        fogbugz = loadModule('./lib/fogbugz.js',
           {
             request: request
           }).module.exports;
