@@ -10,10 +10,10 @@
   },
   "repository": "git://github.com/boneskull/node-fogbugz.git",
   "devDependencies": {
-    "jasmine-node": "^1.11.0",
     "grunt": "^0.4.1",
-    "grunt-jasmine-node": "^0.1.0",
-    "grunt-cli": "^0.1.9"
+    "grunt-bump": "0.0.14",
+    "grunt-cli": "^0.1.9",
+    "grunt-jasmine-node": "^0.2.1"
   },
   "dependencies": {
     "request": "^2.27.0",
