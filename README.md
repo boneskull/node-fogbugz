@@ -92,7 +92,8 @@ Retrieves a list of Filters as an array.  Each item in the array is of type Filt
 
 fogbugz.setCurrentFilter(filter)
 --------------------------------
-Sets the current Filter. I'm not sure what this does exactly.
+Sets the current Filter. Allows to call fogbugz.search() with no arguments to
+list all cases in the current filter.
 
 **Parameters**
 
@@ -101,6 +102,7 @@ Sets the current Filter. I'm not sure what this does exactly.
 *See Also*
 
 [class fogbugz.Filter](#class-fogbugzfilter)
+[fogbugz.search](#fogbugzsearchquery-cols-max)
 
 fogbugz.search(query, \[cols\], \[max\])
 ----------------------------------------
