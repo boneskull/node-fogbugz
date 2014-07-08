@@ -63,7 +63,7 @@ var URLs = {
   logon: '%s://%s/api.asp?cmd=logon&email=%s&password=%s',
   logoff: '%s://%s/api.asp?cmd=logoff&token=%s',
   listFilters: '%s://%s/api.asp?cmd=listFilters&token=%s',
-  setCurrentFilter: '%s://%s/api.asp?cmd=setCurrenFilter&sFilter=%s&token=%s',
+  setCurrentFilter: '%s://%s/api.asp?cmd=setCurrentFilter&sFilter=%s&token=%s',
   search: '%s://%s/api.asp?cmd=search&q=%s&cols=%s&max=%s&token=%s'
 };
 
