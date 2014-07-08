@@ -92,8 +92,8 @@ Retrieves a list of Filters as an array.  Each item in the array is of type Filt
 
 fogbugz.setCurrentFilter(filter)
 --------------------------------
-Sets the current Filter. Allows to call fogbugz.search() with no arguments to
-list all cases in the current filter.
+Sets the current Filter. Allows to call fogbugz.search() with an empty string
+ as the 'query' paramenter to list all cases in the current filter.
 
 **Parameters**
 
