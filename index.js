@@ -60,6 +60,7 @@ var PROTOCOL = 'https';
  *     setCurrentFilter: string, search: string}}
  */
 var URLs = {
+  edit: '%s://%s/api.asp?cmd=edit&token=%s&ixBug=%s&cols=%s',
   logon: '%s://%s/api.asp?cmd=logon&email=%s&password=%s',
   logoff: '%s://%s/api.asp?cmd=logoff&token=%s',
   listFilters: '%s://%s/api.asp?cmd=listFilters&token=%s',
@@ -74,6 +75,7 @@ var URLs = {
 var MODULE_ERRORS = {
   undefined_token: 'token is undefined; you are not logged in',
   xml_parse_error: 'invalid xml received from server',
+  bug_not_found: 'could not find bug',
   unknown: 'unknown error'
 };
 
@@ -117,7 +119,7 @@ var _extractEmptyResponse = function _extractEmptyResponse(xml, dfrd) {
 /**
  * Parses XML and returns JSON.
  * @param {string} xml XML string
- * @param {Deferred} dfrd
+ * @param {Deferred} dfrd The promise that we're parsing values of
  * @returns {Object} JSON representation of XML
  */
 var _parse = function _parse(xml, dfrd) {
@@ -189,7 +191,7 @@ var fogbugz = {
   logon: function logon() {
     var dfrd = Q.defer(),
       extractToken = function extractToken(xml) {
-        var r = _parse(xml);
+        var r = _parse(xml, dfrd);
         if (r) {
           return r.response.token[0];
         }
@@ -243,7 +245,7 @@ var fogbugz = {
     var token = cache.get('token'),
       dfrd = Q.defer(),
       extractFilters = function extractFilters(xml) {
-        var r = _parse(xml);
+        var r = _parse(xml, dfrd);
         if (r) {
           return r.response.filters[0].filter
             .map(function (filter) {
@@ -324,10 +326,10 @@ var fogbugz = {
       cases, fields,
       dfrd = Q.defer(),
       extractCases = function extractCases(xml) {
-        var r = _parse(xml);
-        if (!r || !r.response || !r.response.cases.length ||
-          !r.response.cases[0].case) {
-          return dfrd.reject('could not find bug');
+        var r = _parse(xml, dfrd);
+        if (!r || !r.response || !r.response.cases ||
+          !r.response.cases.length || !r.response.cases[0].case) {
+          return dfrd.reject(MODULE_ERRORS.bug_not_found);
         }
         cases = r.response.cases[0].case.map(function (kase) {
           var bug = new Case({
@@ -393,6 +395,90 @@ var fogbugz = {
     }
     return dfrd.promise;
 
+  },
+
+  /**
+   * Edit a bug by ID
+   * @method editBug
+   * @param {number} [id] -- the ixBug of a case that you want edit
+   * @param {Object} [parameters] -- the parameters you want edit
+   * @param {array} [cols] The columns you want returned about this case
+   * @returns {Function|promise|Q.promise} Promise
+   */
+  editBug: function editBug(id, parameters, cols) {
+    var token = cache.get('token'),
+      cases, fields,
+      dfrd = Q.defer(),
+      extractCases = function extractCases(xml) {
+        var r = _parse(xml, dfrd);
+        if (!r || !r.response || !r.response.case || !r.response.case.length) {
+          return dfrd.reject(MODULE_ERRORS.xml_parse_error);
+        }
+        cases = r.response.case.map(function (kase) {
+          var bug = new Case({
+            id: kase.$.ixBug,
+            operations: kase.$.operations.split(','),
+            title: kase.sTitle[0].trim(),
+            status: kase.sStatus[0].trim(),
+            url: format('%s://%s/default.asp?%s', PROTOCOL, conf.host,
+              kase.$.ixBug),
+            fixFor: kase.sFixFor[0].trim()
+          });
+          if (kase.sPersonAssignedTo) {
+            bug.assignedTo = kase.sPersonAssignedTo[0].trim();
+            bug.assignedToEmail = kase.sEmailAssignedTo[0].trim();
+          }
+          if (kase.tags && kase.tags[0].tag) {
+            bug.tags = kase.tags[0].tag.join(', ');
+          }
+          // find anything leftover in the case, disregarding the fields we
+          // already
+          _(kase)
+            .keys()
+            .difference(_.keys(bug).concat('sTitle', 'sStatus', '$',
+            'sFixFor', 'sPersonAssignedTo',
+            'sEmailAssignedTo'))
+            .each(function (key) {
+            var value = kase[key];
+            bug[key] = _.isArray(value) && value.length === 1 ?
+              bug[key] = value[0].trim() : // dereference
+              value;
+          });
+          bug._raw = kase;
+          return bug;
+        });
+        if (cases.length > 1) {
+          return cases;
+        }
+        return cases[0];
+      };
+    fields = cols.concat(DEFAULT_COLS).join(',');
+    id = encodeURIComponent(id);
+
+    if (!token) {
+      dfrd.reject(MODULE_ERRORS.undefined_token);
+    } else {
+      var url = format(URLs.edit, PROTOCOL, conf.host, token, id, fields);
+      // Some work need to do, parameters .....
+      Object.keys(parameters).forEach(function (k) {
+        url += '&' + k + '=' + parameters[k];
+      });
+      request(url, function (err, res, body) {
+        var cases;
+        if (err) {
+          dfrd.reject(err);
+        } else {
+          cases = extractCases(body);
+          if (!cases) {
+            console.error(body);
+            dfrd.reject(MODULE_ERRORS.unknown);
+          } else {
+            dfrd.resolve(cases);
+          }
+        }
+      });
+    }
+    return dfrd.promise;
   },
 
   /**
