@@ -13,6 +13,7 @@
     "grunt": "^0.4.1",
     "grunt-bump": "0.0.14",
     "grunt-cli": "^0.1.9",
+    "grunt-eslint": "^13.0.0",
     "grunt-jasmine-node": "^0.2.1"
   },
   "dependencies": {
