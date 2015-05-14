@@ -1,10 +1,8 @@
-var Q = require('q'),
-  loadModule = require('./module-loader').loadModule,
-  inspect = require('util').inspect,
+'use strict';
 
-  dump = function dump(o) {
-    return inspect(o, {depth: null});
-  };
+var moduleLoader = require('./module-loader');
+
+var loadModule = moduleLoader.loadModule;
 
 describe('fogbugz module', function () {
 
@@ -34,7 +32,7 @@ describe('fogbugz module', function () {
     it('should successfully login', function (done) {
       var token = 'capybara',
         xml = '<response><token><![CDATA[' + token +
-              ']]></token></response>',
+          ']]></token></response>',
         request = jasmine.createSpy('request')
           .andCallFake(function (url, cb) {
             cb(null, null, xml);
@@ -120,7 +118,9 @@ describe('fogbugz module', function () {
 
   describe('listFilters method', function () {
     it('should get a list of available filters', function (done) {
-      var filtersXml = '<response><filters><filter type="builtin" sFilter="ez">My Cases</filter><filter type="builtin" sFilter="inbox">Inbox</filter></filters></response>',
+      var filtersXml = '<response><filters><filter type="builtin" ' +
+          'sFilter="ez">My Cases</filter><filter type="builtin" ' +
+          'sFilter="inbox">Inbox</filter></filters></response>',
         request = jasmine.createSpy('request')
           .andCallFake(function (url, cb) {
             cb(null, null, filtersXml);
@@ -134,8 +134,18 @@ describe('fogbugz module', function () {
       fogbugz.listFilters()
         .then(function (res) {
           expect(res).toEqual([
-            new fogbugz.Filter({"name": "My Cases", "type": "builtin", "id": "ez", "url": "https://zzz.fogbugz.com/default.asp?pgx=LF&ixFilter=ez"}),
-            new fogbugz.Filter({"name": "Inbox", "type": "builtin", "id": "inbox", "url": "https://zzz.fogbugz.com/default.asp?pgx=LF&ixFilter=inbox"})
+            new fogbugz.Filter({
+              'name': 'My Cases',
+              'type': 'builtin',
+              'id': 'ez',
+              'url': 'https://zzz.fogbugz.com/default.asp?pgx=LF&ixFilter=ez'
+            }),
+            new fogbugz.Filter({
+              'name': 'Inbox',
+              'type': 'builtin',
+              'id': 'inbox',
+              'url': 'https://zzz.fogbugz.com/default.asp?pgx=LF&ixFilter=inbox'
+            })
           ]);
         }, function () {
           expect(true).toBe(false);
@@ -170,7 +180,12 @@ describe('fogbugz module', function () {
 
   describe('search method', function () {
     it('should perform a search', function (done) {
-      var xml = '<response><cases count="7"><case ixBug="16006" operations="edit,assign,resolve,email,remind"><sTitle><![CDATA[AQ toolkit API: bar chart shown and selected for text]]></sTitle><sFixFor><![CDATA[whenever]]></sFixFor><sStatus><![CDATA[ Active ]]></sStatus><sFooBar><![CDATA[FOO FOO FOO]]></sFooBar></case></cases></response>',
+      var xml = '<response><cases count="7"><case ixBug="16006" ' +
+          'operations="edit,assign,resolve,email,remind"><sTitle><![CDATA[AQ ' +
+          'toolkit API: bar chart shown and selected for' +
+          ' text]]></sTitle><sFixFor><![CDATA[whenever]]></sFixFor><sStatus>' +
+          '<![CDATA[ Active ]]></sStatus><sFooBar><![CDATA[FOO FOO FOO]]>' +
+          '</sFooBar></case></cases></response>',
         request = jasmine.createSpy('request')
           .andCallFake(function (url, cb) {
             cb(null, null, xml);
@@ -185,19 +200,24 @@ describe('fogbugz module', function () {
         .then(function (res) {
           expect(res).toEqual(
             new fogbugz.Case({
-                status: "Active",
-                title: "AQ toolkit API: bar chart shown and selected for text",
-                operations: ["edit", "assign", "resolve", "email", "remind"],
-                id: "16006",
-                url: "https://zzz.fogbugz.com/default.asp?16006",
-                fixFor: "whenever",
+                status: 'Active',
+                title: 'AQ toolkit API: bar chart shown and selected for text',
+                operations: ['edit', 'assign', 'resolve', 'email', 'remind'],
+                id: '16006',
+                url: 'https://zzz.fogbugz.com/default.asp?16006',
+                fixFor: 'whenever',
                 sFooBar: 'FOO FOO FOO',
-                _raw: { '$': { ixBug: '16006',
-                  operations: 'edit,assign,resolve,email,remind' },
-                  sTitle: ['AQ toolkit API: bar chart shown and selected for text'],
+                _raw: {
+                  '$': {
+                    ixBug: '16006',
+                    operations: 'edit,assign,resolve,email,remind'
+                  },
+                  sTitle: ['AQ toolkit API: bar chart shown and selected for ' +
+                  'text'],
                   sFixFor: ['whenever'],
                   sStatus: [' Active '],
-                  sFooBar: ['FOO FOO FOO'] }
+                  sFooBar: ['FOO FOO FOO']
+                }
               }
             ));
         }, function (err) {

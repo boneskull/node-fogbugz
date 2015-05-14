@@ -1,3 +1,5 @@
+'use strict';
+
 var vm = require('vm');
 var fs = require('fs');
 var path = require('path');
@@ -9,6 +11,7 @@ var path = require('path');
  *
  * @param {string} filePath Absolute path to module (file to load)
  * @param {Object=} mocks Hash of mocked dependencies
+ * @returns {Object} Mocked module
  */
 exports.loadModule = function (filePath, mocks) {
   mocks = mocks || {};

@@ -1,10 +1,12 @@
+'use strict';
+
 module.exports = function (grunt) {
 
   // Project configuration.
   grunt.initConfig({
     pkg: require('./package.json'),
     jasmine_node: {
-      projectRoot: "./spec"
+      projectRoot: './spec'
     },
     bump: {
       options: {
@@ -17,16 +19,24 @@ module.exports = function (grunt) {
         tagMessage: 'Version %VERSION%',
         push: false,
         gitDescribeOptions: '--tags --always --abbrev=1 --dirty=-d'
-    }
+      }
+    },
+    eslint: {
+      main: [
+        'Gruntfile.js',
+        'index.js',
+        'spec/**/*.js'
+      ]
     }
   });
 
   // Load the plugin that provides the "uglify" task.
   grunt.loadNpmTasks('grunt-jasmine-node');
   grunt.loadNpmTasks('grunt-bump');
+  grunt.loadNpmTasks('grunt-eslint');
 
   // Default task(s).
-  grunt.registerTask('test', ['jasmine_node']);
+  grunt.registerTask('test', ['eslint', 'jasmine_node']);
   grunt.registerTask('default', ['test']);
 
 };

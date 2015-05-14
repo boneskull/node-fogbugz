@@ -4,20 +4,17 @@
  * @module fogbugz
  * @title node-fogbugz
  * @overview Provides FogBugz API functionality.
-
  This is still in development as the API has not fully been built out yet, but
  I hope to get everything in place eventually.
-
  Installation
  ============
  ```
  npm install fogbugz
  ```
-
  Configuration
  =============
- Create a `fogbugz.conf.json` in your app's root directory.  It should look like this:
-
+ Create a `fogbugz.conf.json` in your app's root directory.  It should look like
+ this:
  ```json
  {
    "host": "zzz.fogbugz.com",
@@ -25,7 +22,6 @@
  "password": "Password1"
  }
  ```
-
  Usage
  =====
  ```javascript
@@ -44,7 +40,6 @@
  */
 var request = require('request'),
   Q = require('q'),
-  fs = require('fs'),
   path = require('path'),
   conf = require(path.join(process.env.PWD, 'fogbugz.conf.json')),
   format = require('util').format,
@@ -61,7 +56,8 @@ var PROTOCOL = 'https';
 
 /**
  * URL masks for the various API calls
- * @type {{logon: string, logoff: string, listFilters: string, setCurrentFilter: string, search: string}}
+ * @type {{logon: string, logoff: string, listFilters: string,
+ *     setCurrentFilter: string, search: string}}
  */
 var URLs = {
   logon: '%s://%s/api.asp?cmd=logon&email=%s&password=%s',
@@ -80,67 +76,6 @@ var MODULE_ERRORS = {
   xml_parse_error: 'invalid xml received from server',
   unknown: 'unknown error'
 };
-
-/**
- * All possible fields returned for a case
- * @type {Array}
- */
-var COLS = [
-  'dFixFor',
-  'dtClosed',
-  'dtDue',
-  'dtLastUpdated',
-  'dtLastView',
-  'dtOpened',
-  'dtResolved',
-  'fForwarded',
-  'fOpen',
-  'fReplied',
-  'fScoutStopReporting',
-  'fSubscribed',
-  'hrsCurrentEst',
-  'hrsElapsed',
-  'hrsOrigEst',
-  'iPersonClosedBy',
-  'ixArea',
-  'ixBug',
-  'ixBugChildren',
-  'ixBugEventLastView',
-  'ixBugEventLatest',
-  'ixBugEventlatestText',
-  'ixBugParent',
-  'ixCategory',
-  'ixDiscussTopic',
-  'ixFixFor',
-  'ixGroup',
-  'ixMailbox',
-  'ixPersonAssignedTo',
-  'ixPersonLastEditedBy',
-  'ixPersonOpenedBy',
-  'ixPersonResolvedBy',
-  'ixPriority',
-  'ixProject',
-  'ixRelatedBugs',
-  'ixStatus',
-  'sArea',
-  'sCategory',
-  'sComputer',
-  'sEmailAssignedTo',
-  'sFixFor',
-  'sLatestTextSummary',
-  'sOriginalTitle',
-  'sPersonAssignedTo',
-  'sPriority',
-  'sProject',
-  'sReleaseNotes',
-  'sScoutDescription',
-  'sScoutMessage',
-  'sStatus',
-  'sTicket',
-  'sTitle',
-  'sVersion',
-  'tags'
-];
 
 /**
  * Default fields to pull when querying cases
@@ -182,9 +117,10 @@ var _extractEmptyResponse = function _extractEmptyResponse(xml, dfrd) {
 /**
  * Parses XML and returns JSON.
  * @param {string} xml XML string
+ * @param {Deferred} dfrd
  * @returns {Object} JSON representation of XML
  */
-var _parse = function _parse(xml) {
+var _parse = function _parse(xml, dfrd) {
   var parser = new xml2js.Parser(), r;
   parser.parseString(xml, function (err, res) {
     if (err) {
@@ -240,7 +176,7 @@ var fogbugz = {
           else {
             dfrd.resolve(true);
           }
-        })
+        });
     }
     return dfrd.promise;
   },
@@ -291,7 +227,8 @@ var fogbugz = {
   },
 
   /**
-   * Retrieves a list of Filters as an array.  Each item in the array is of type Filter.  Example:
+   * Retrieves a list of Filters as an array.  Each item in the array is of
+   * type Filter.  Example:
    ```
    [{"name": "My Cases", "type": "builtin", "id": "ez",
     "url": "https://zzz.fogbugz.com/default.asp?pgx=LF&ixFilter=ez"}),
@@ -362,7 +299,7 @@ var fogbugz = {
       request(format(URLs.setCurrentFilter, PROTOCOL, conf.host, id,
         token), function (err, res, body) {
         if (err) {
-          dfrd.reject(err)
+          dfrd.reject(err);
         }
         else {
           _extractEmptyResponse(body, dfrd);
@@ -382,54 +319,53 @@ var fogbugz = {
    * @returns {Function|promise|Q.promise} Promise
    */
   search: function search(query, cols, max) {
-    var token = cache.get('token'),
+    var url,
+      token = cache.get('token'),
       cases, fields,
       dfrd = Q.defer(),
       extractCases = function extractCases(xml) {
         var r = _parse(xml);
         if (!r || !r.response || !r.response.cases.length ||
-          !r.response.cases[0]['case']) {
+          !r.response.cases[0].case) {
           return dfrd.reject('could not find bug');
         }
-        else {
-          cases = r.response.cases[0]['case'].map(function (kase) {
-            var bug = new Case({
-              id: kase.$.ixBug,
-              operations: kase.$.operations.split(','),
-              title: kase.sTitle[0].trim(),
-              status: kase.sStatus[0].trim(),
-              url: format('%s://%s/default.asp?%s', PROTOCOL, conf.host,
-                kase.$.ixBug),
-              fixFor: kase.sFixFor[0].trim()
-            });
-            if (kase.sPersonAssignedTo) {
-              bug.assignedTo = kase.sPersonAssignedTo[0].trim();
-              bug.assignedToEmail = kase.sEmailAssignedTo[0].trim();
-            }
-            if (kase.tags && kase.tags[0].tag) {
-              bug.tags = kase.tags[0].tag.join(', ');
-            }
-            // find anything leftover in the case, disregarding the fields we
-            // already
-            _(kase)
-              .keys()
-              .difference(_.keys(bug).concat('sTitle', 'sStatus', '$',
-                'sFixFor', 'sPersonAssignedTo',
-                'sEmailAssignedTo'))
-              .each(function (key) {
-                var value = kase[key];
-                bug[key] = _.isArray(value) && value.length === 1 ?
-                           bug[key] = value[0].trim() : // dereference
-                           value;
-              });
-            bug._raw = kase;
-            return bug;
+        cases = r.response.cases[0].case.map(function (kase) {
+          var bug = new Case({
+            id: kase.$.ixBug,
+            operations: kase.$.operations.split(','),
+            title: kase.sTitle[0].trim(),
+            status: kase.sStatus[0].trim(),
+            url: format('%s://%s/default.asp?%s', PROTOCOL, conf.host,
+              kase.$.ixBug),
+            fixFor: kase.sFixFor[0].trim()
           });
-          if (cases.length > 1) {
-            return cases;
+          if (kase.sPersonAssignedTo) {
+            bug.assignedTo = kase.sPersonAssignedTo[0].trim();
+            bug.assignedToEmail = kase.sEmailAssignedTo[0].trim();
           }
-          return cases[0];
+          if (kase.tags && kase.tags[0].tag) {
+            bug.tags = kase.tags[0].tag.join(', ');
+          }
+          // find anything leftover in the case, disregarding the fields we
+          // already
+          _(kase)
+            .keys()
+            .difference(_.keys(bug).concat('sTitle', 'sStatus', '$',
+              'sFixFor', 'sPersonAssignedTo',
+              'sEmailAssignedTo'))
+            .each(function (key) {
+              var value = kase[key];
+              bug[key] = _.isArray(value) && value.length === 1 ?
+                bug[key] = value[0].trim() : // dereference
+                value;
+            });
+          bug._raw = kase;
+          return bug;
+        });
+        if (cases.length > 1) {
+          return cases;
         }
+        return cases[0];
       };
     fields = (cols || DEFAULT_COLS).join(',');
     max = max || DEFAULT_MAX;
@@ -437,7 +373,7 @@ var fogbugz = {
     if (!token) {
       dfrd.reject(MODULE_ERRORS.undefined_token);
     } else {
-      var url = format(URLs.search, PROTOCOL, conf.host, query, fields, max,
+      url = format(URLs.search, PROTOCOL, conf.host, query, fields, max,
         token);
       request(url, function (err, res, body) {
         var cases;
