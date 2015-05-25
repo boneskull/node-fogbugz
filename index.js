@@ -41,7 +41,7 @@
 var request = require('request'),
   Q = require('q'),
   path = require('path'),
-  conf = require(path.join(process.env.PWD, 'fogbugz.conf.json')),
+  conf = require(path.join(process.env.PWD || process.cwd(), 'fogbugz.conf.json')),
   format = require('util').format,
   extend = require('util')._extend,
   xml2js = require('xml2js'),
