@@ -6,6 +6,57 @@ var loadModule = moduleLoader.loadModule;
 
 describe('fogbugz module', function () {
 
+  describe('editBug method', function () {
+    var emptyXml = '<response></response>';
+    var editBugXml = '<response><case ixBug="16006" ' +
+      'operations="edit,assign,resolve,email,remind"><sTitle>' +
+      '<![CDATA[AQ toolkit API: bar chart shown and selected for text]]>' +
+      '</sTitle><sFixFor><![CDATA[whenever]]></sFixFor><sStatus>' +
+      '<![CDATA[ Active ]]></sStatus><sFooBar><![CDATA[FOO FOO FOO]]>' +
+      '</sFooBar></case></response>';
+    var editBugRequest = function (xml) {
+      return jasmine.createSpy('request').andCallFake(function (url, cb) {
+        cb(null, null, xml || editBugXml);
+      });
+    };
+
+    it('should fail if id is not found', function (done) {
+      var request = editBugRequest(emptyXml);
+      var fogbugz = loadModule('./index.js', { request: request })
+        .module.exports;
+
+      fogbugz.setToken('capybara');
+      fogbugz.editBug(16227, {}, [])
+        .then(function () {
+        expect(true).toBe(false);
+      }, function (err) {
+          expect(err).toBe(fogbugz.MODULE_ERRORS.xml_parse_error);
+        })
+        .finally(fogbugz.forgetToken)
+        .finally(done);
+    });
+
+    it('should find the requested bug', function (done) {
+      var request = editBugRequest();
+      var fogbugz = loadModule('./index.js', { request: request })
+        .module.exports;
+      var testId = '16006';
+
+      fogbugz.setToken('capybara');
+      fogbugz.editBug(testId, {}, [])
+        .then(function (fbzCase) {
+        expect(fbzCase.id).toEqual(testId);
+        expect(fbzCase.title)
+          .toEqual('AQ toolkit API: bar chart shown and selected for text');
+      }, function (err) {
+          console.log(err);
+          expect(true).toBe(false);
+        })
+        .finally(fogbugz.forgetToken)
+        .finally(done);
+    });
+  });
+
   describe('logon method', function () {
 
     it('should fail if error received', function (done) {
@@ -58,8 +109,8 @@ describe('fogbugz module', function () {
     });
   });
 
-  describe('logoff method', function (done) {
-    it('should fail w/o presence of token', function () {
+  describe('logoff method', function () {
+    it('should fail w/o presence of token', function (done) {
       var mocks = {},
         fogbugz;
       fogbugz = loadModule('./index.js', mocks).module.exports;
