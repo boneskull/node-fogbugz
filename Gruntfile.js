@@ -1,42 +1,59 @@
+/* eslint-env node */
+
 'use strict';
 
 module.exports = function (grunt) {
+  var loadGruntConfig = require('load-grunt-config');
+  var pkg = grunt.file.readJSON('package.json'),
 
-  // Project configuration.
-  grunt.initConfig({
-    pkg: require('./package.json'),
-    jasmine_node: {
-      projectRoot: './spec'
-    },
-    bump: {
-      options: {
-        files: ['package.json'],
-        commit: true,
-        commitMessage: 'Release v%VERSION%',
-        commitFiles: ['package.json'],
-        createTag: true,
-        tagName: 'v%VERSION%',
-        tagMessage: 'Version %VERSION%',
-        push: false,
-        gitDescribeOptions: '--tags --always --abbrev=1 --dirty=-d'
+    /**
+     * Random bits of crap to send to the Grunt templates
+     * @type {{pkg: Object, bower: ?Object, min: Function, author: *}}
+     */
+    data = {
+      pkg: pkg,
+
+      author: typeof pkg.author === 'string' ? pkg.author :
+        [pkg.author.name, pkg.author.email].join(' ')
+    };
+
+  Object.defineProperty(data, 'author', {
+    /**
+     * Normalizes `author` field of `package.json`.
+     * @returns {string} Author name(s) and email(s)
+     */
+    get: function author() {
+      function _author(author) {
+        var format;
+        if (typeof author === 'string') {
+          return author;
+        }
+        format = require('util').format;
+        return format('%s <%s>', author.name, author.email);
       }
-    },
-    eslint: {
-      main: [
-        'Gruntfile.js',
-        'index.js',
-        'spec/**/*.js'
-      ]
+
+      if (Array.isArray(pkg.author)) {
+        return pkg.author.map(function (author) {
+          return _author(author);
+        }).join(', ');
+      }
+      return _author(pkg.author);
     }
   });
 
-  // Load the plugin that provides the "uglify" task.
-  grunt.loadNpmTasks('grunt-jasmine-node');
-  grunt.loadNpmTasks('grunt-bump');
-  grunt.loadNpmTasks('grunt-eslint');
+  if (grunt.option('time')) {
+    require('time-grunt')(grunt);
+  }
 
-  // Default task(s).
-  grunt.registerTask('test', ['eslint', 'jasmine_node']);
-  grunt.registerTask('default', ['test']);
-
+  loadGruntConfig(grunt, {
+    jitGrunt: {
+      staticMappings: {
+        devUpdate: 'grunt-dev-update',
+        'bump-only': 'grunt-bump',
+        'bump-commit': 'grunt-bump',
+        'mocha_istanbul': 'grunt-mocha-istanbul'
+      }
+    },
+    data: data
+  });
 };

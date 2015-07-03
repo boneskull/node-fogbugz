@@ -1,0 +1,3 @@
+test:
+  - eslint:main
+  - mocha_istanbul:main

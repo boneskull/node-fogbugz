@@ -1,6 +1,14 @@
 language: node_js
 node_js:
-  - "0.12"
-  - "0.10"
-  - "iojs"
-
+- iojs
+- 0.12
+- 0.11
+- 0.1
+- 0.8
+sudo: false
+script: npm test
+after_script:
+- cat ./coverage/lcov.info | ./node_modules/.bin/codeclimate
+env:
+  global:
+    secure: Cr3bWTtiArQ+RaGEVp3IbQEcZ0UhoqpDgKKGmOSEnY3UMhf50X6olmoBzN6TMsPVr94RpBg9DAaAt/8ijFlLC+yRRs0/6TguUEfiMCllAlvfj1iiMVnZbUGjSmD1w9EjTaknoBfvSmTsK9U65gcJfDo6DSboFsQwXrO47CqLWuc=

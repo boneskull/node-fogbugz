@@ -38,16 +38,15 @@
  * @version 0.2.3
  * @license MIT
  */
-var pwd = process.cwd();
-var request = require('request'),
-  Q = require('q'),
-  path = require('path'),
-  conf = require(path.join(pwd, 'fogbugz.conf.json')),
-  format = require('util').format,
-  extend = require('util')._extend,
-  xml2js = require('xml2js'),
-  _ = require('lodash-node'),
-  cache = require('memory-cache');
+var request = require('request');
+var Q = require('q');
+var format = require('util').format;
+var extend = require('util')._extend;
+var xml2js = require('xml2js');
+var _ = require('lodash-node');
+var cache = require('memory-cache');
+
+var conf;
 
 /**
  * Default protocol
@@ -74,9 +73,9 @@ var URLs = {
  * @type {{undefined_token: string, xml_parse_error: string, unknown: string}}
  */
 var MODULE_ERRORS = {
-  undefined_token: 'token is undefined; you are not logged in',
-  xml_parse_error: 'invalid xml received from server',
-  bug_not_found: 'could not find bug',
+  undefinedToken: 'token is undefined; you are not logged in',
+  xmlParseError: 'invalid xml received from server',
+  bugNotFound: 'could not find bug',
   unknown: 'unknown error'
 };
 
@@ -98,46 +97,6 @@ var DEFAULT_COLS = [
  * @type {number}
  */
 var DEFAULT_MAX = 20;
-
-/**
- * Basically just asserts an empty response has no errors in it.
- * @param {string} xml XML to parse
- * @param {Q.defer} dfrd Q deferred object
- */
-var _extractEmptyResponse = function _extractEmptyResponse(xml, dfrd) {
-  var parser = new xml2js.Parser();
-  parser.parseString(xml, function (err, res) {
-    if (err) {
-      dfrd.reject();
-      return MODULE_ERRORS.xml_parse_error;
-    }
-    if (res.response.error) {
-      dfrd.reject(res.response.error);
-    }
-  });
-};
-
-/**
- * Parses XML and returns JSON.
- * @param {string} xml XML string
- * @param {Deferred} dfrd The promise that we're parsing values of
- * @returns {Object} JSON representation of XML
- */
-var _parse = function _parse(xml, dfrd) {
-  var parser = new xml2js.Parser(), r;
-  parser.parseString(xml, function (err, res) {
-    if (err) {
-      dfrd.reject(MODULE_ERRORS.xml_parse_error);
-      return;
-    }
-    if (res.response.error) {
-      dfrd.reject(res.response.error);
-      return;
-    }
-    r = res;
-  });
-  return r;
-};
 
 var fogbugz = {
   MODULE_ERRORS: MODULE_ERRORS,
@@ -166,10 +125,10 @@ var fogbugz = {
    * @returns {Function|promise|Q.promise} Promise
    */
   logoff: function logoff() {
-    var token = cache.get('token'),
-      dfrd = Q.defer();
+    var token = cache.get('token');
+    var dfrd = Q.defer();
     if (!token) {
-      dfrd.reject(MODULE_ERRORS.undefined_token);
+      dfrd.reject(MODULE_ERRORS.undefinedToken);
     } else {
       request(format(URLs.logoff, PROTOCOL, conf.host, token),
         function (err) {
@@ -190,13 +149,15 @@ var fogbugz = {
    * @returns {Function|promise|Q.promise} Promise
    */
   logon: function logon() {
-    var dfrd = Q.defer(),
-      extractToken = function extractToken(xml) {
-        var r = _parse(xml, dfrd);
-        if (r) {
-          return r.response.token[0];
-        }
-      }, token = cache.get('token');
+    var dfrd = Q.defer();
+    var token = cache.get('token');
+
+    function extractToken(xml) {
+      var r = _parse(xml, dfrd);
+      if (r) {
+        return r.response.token[0];
+      }
+    }
 
     if (token) {
       dfrd.resolve({
@@ -243,26 +204,27 @@ var fogbugz = {
    * @returns {Function|promise|Q.promise} Promise
    */
   listFilters: function listFilters() {
-    var token = cache.get('token'),
-      dfrd = Q.defer(),
-      extractFilters = function extractFilters(xml) {
-        var r = _parse(xml, dfrd);
-        if (r) {
-          return r.response.filters[0].filter
-            .map(function (filter) {
-              return new Filter({
-                name: filter._.trim(),
-                type: filter.$.type,
-                id: filter.$.sFilter,
-                url: format('%s://%s/default.asp?pgx=LF&ixFilter=%s',
-                  PROTOCOL, conf.host, filter.$.sFilter)
-              });
+    var token = cache.get('token');
+    var dfrd = Q.defer();
+
+    function extractFilters(xml) {
+      var r = _parse(xml, dfrd);
+      if (r) {
+        return r.response.filters[0].filter
+          .map(function (filter) {
+            return new Filter({
+              name: filter._.trim(),
+              type: filter.$.type,
+              id: filter.$.sFilter,
+              url: format('%s://%s/default.asp?pgx=LF&ixFilter=%s',
+                PROTOCOL, conf.host, filter.$.sFilter)
             });
-        }
-      };
+          });
+      }
+    }
 
     if (!token) {
-      dfrd.reject(MODULE_ERRORS.undefined_token);
+      dfrd.reject(MODULE_ERRORS.undefinedToken);
     } else {
       request(format(URLs.listFilters, PROTOCOL, conf.host, token),
         function (err, res, body) {
@@ -292,10 +254,11 @@ var fogbugz = {
    * @returns {Function|promise|Q.promise}
    */
   setCurrentFilter: function setCurrentFilter(filter) {
-    var token = cache.get('token'),
-      dfrd = Q.defer(), id;
+    var token = cache.get('token');
+    var dfrd = Q.defer();
+    var id;
     if (!token) {
-      dfrd.reject(MODULE_ERRORS.undefined_token);
+      dfrd.reject(MODULE_ERRORS.undefinedToken);
     }
     else {
       id = typeof filter === 'string' ? filter : filter.id;
@@ -322,59 +285,62 @@ var fogbugz = {
    * @returns {Function|promise|Q.promise} Promise
    */
   search: function search(query, cols, max) {
-    var url,
-      token = cache.get('token'),
-      cases, fields,
-      dfrd = Q.defer(),
-      extractCases = function extractCases(xml) {
-        var r = _parse(xml, dfrd);
-        if (!r || !r.response || !r.response.cases ||
-          !r.response.cases.length || !r.response.cases[0].case) {
-          return dfrd.reject(MODULE_ERRORS.bug_not_found);
-        }
-        cases = r.response.cases[0].case.map(function (kase) {
-          var bug = new Case({
-            id: kase.$.ixBug,
-            operations: kase.$.operations.split(','),
-            title: kase.sTitle[0].trim(),
-            status: kase.sStatus[0].trim(),
-            url: format('%s://%s/default.asp?%s', PROTOCOL, conf.host,
-              kase.$.ixBug),
-            fixFor: kase.sFixFor[0].trim()
-          });
-          if (kase.sPersonAssignedTo) {
-            bug.assignedTo = kase.sPersonAssignedTo[0].trim();
-            bug.assignedToEmail = kase.sEmailAssignedTo[0].trim();
-          }
-          if (kase.tags && kase.tags[0].tag) {
-            bug.tags = kase.tags[0].tag.join(', ');
-          }
-          // find anything leftover in the case, disregarding the fields we
-          // already
-          _(kase)
-            .keys()
-            .difference(_.keys(bug).concat('sTitle', 'sStatus', '$',
-              'sFixFor', 'sPersonAssignedTo',
-              'sEmailAssignedTo'))
-            .each(function (key) {
-              var value = kase[key];
-              bug[key] = _.isArray(value) && value.length === 1 ?
-                bug[key] = value[0].trim() : // dereference
-                value;
-            });
-          bug._raw = kase;
-          return bug;
+    var url;
+    var token = cache.get('token');
+    var cases;
+    var fields;
+    var dfrd = Q.defer();
+
+    function extractCases(xml) {
+      var r = _parse(xml, dfrd);
+      if (!r || !r.response || !r.response.cases || !r.response.cases.length ||
+        !r.response.cases[0].case) {
+        return dfrd.reject(MODULE_ERRORS.bugNotFound);
+      }
+      cases = r.response.cases[0].case.map(function (kase) {
+        var bug = new Case({
+          id: kase.$.ixBug,
+          operations: kase.$.operations.split(','),
+          title: kase.sTitle[0].trim(),
+          status: kase.sStatus[0].trim(),
+          url: format('%s://%s/default.asp?%s', PROTOCOL, conf.host,
+            kase.$.ixBug),
+          fixFor: kase.sFixFor[0].trim()
         });
-        if (cases.length > 1) {
-          return cases;
+        if (kase.sPersonAssignedTo) {
+          bug.assignedTo = kase.sPersonAssignedTo[0].trim();
+          bug.assignedToEmail = kase.sEmailAssignedTo[0].trim();
         }
-        return cases[0];
-      };
+        if (kase.tags && kase.tags[0].tag) {
+          bug.tags = kase.tags[0].tag.join(', ');
+        }
+        // find anything leftover in the case, disregarding the fields we
+        // already
+        _(kase)
+          .keys()
+          .difference(_.keys(bug).concat('sTitle', 'sStatus', '$',
+            'sFixFor', 'sPersonAssignedTo',
+            'sEmailAssignedTo'))
+          .each(function (key) {
+            var value = kase[key];
+            bug[key] = _.isArray(value) && value.length === 1 ?
+              bug[key] = value[0].trim() : // dereference
+              value;
+          });
+        bug._raw = kase;
+        return bug;
+      });
+      if (cases.length > 1) {
+        return cases;
+      }
+      return cases[0];
+    }
+
     fields = (cols || DEFAULT_COLS).join(',');
     max = max || DEFAULT_MAX;
     query = encodeURIComponent(query);
     if (!token) {
-      dfrd.reject(MODULE_ERRORS.undefined_token);
+      dfrd.reject(MODULE_ERRORS.undefinedToken);
     } else {
       url = format(URLs.search, PROTOCOL, conf.host, query, fields, max,
         token);
@@ -407,59 +373,63 @@ var fogbugz = {
    * @returns {Function|promise|Q.promise} Promise
    */
   editBug: function editBug(id, parameters, cols) {
-    var token = cache.get('token'),
-      cases, fields,
-      dfrd = Q.defer(),
-      extractCases = function extractCases(xml) {
-        var r = _parse(xml, dfrd);
-        if (!r || !r.response || !r.response.case || !r.response.case.length) {
-          return dfrd.reject(MODULE_ERRORS.xml_parse_error);
+    var token = cache.get('token');
+    var cases;
+    var fields;
+    var url;
+    var dfrd = Q.defer();
+
+    function extractCases(xml) {
+      var r = _parse(xml, dfrd);
+      if (!r || !r.response || !r.response.case || !r.response.case.length) {
+        return dfrd.reject(new Error(MODULE_ERRORS.xmlParseError));
+      }
+      cases = r.response.case.map(function (kase) {
+        var bug = new Case({
+          id: kase.$.ixBug,
+          operations: kase.$.operations.split(','),
+          title: kase.sTitle[0].trim(),
+          status: kase.sStatus[0].trim(),
+          url: format('%s://%s/default.asp?%s', PROTOCOL, conf.host,
+            kase.$.ixBug),
+          fixFor: kase.sFixFor[0].trim()
+        });
+        if (kase.sPersonAssignedTo) {
+          bug.assignedTo = kase.sPersonAssignedTo[0].trim();
+          bug.assignedToEmail = kase.sEmailAssignedTo[0].trim();
         }
-        cases = r.response.case.map(function (kase) {
-          var bug = new Case({
-            id: kase.$.ixBug,
-            operations: kase.$.operations.split(','),
-            title: kase.sTitle[0].trim(),
-            status: kase.sStatus[0].trim(),
-            url: format('%s://%s/default.asp?%s', PROTOCOL, conf.host,
-              kase.$.ixBug),
-            fixFor: kase.sFixFor[0].trim()
-          });
-          if (kase.sPersonAssignedTo) {
-            bug.assignedTo = kase.sPersonAssignedTo[0].trim();
-            bug.assignedToEmail = kase.sEmailAssignedTo[0].trim();
-          }
-          if (kase.tags && kase.tags[0].tag) {
-            bug.tags = kase.tags[0].tag.join(', ');
-          }
-          // find anything leftover in the case, disregarding the fields we
-          // already
-          _(kase)
-            .keys()
-            .difference(_.keys(bug).concat('sTitle', 'sStatus', '$',
+        if (kase.tags && kase.tags[0].tag) {
+          bug.tags = kase.tags[0].tag.join(', ');
+        }
+        // find anything leftover in the case, disregarding the fields we
+        // already
+        _(kase)
+          .keys()
+          .difference(_.keys(bug).concat('sTitle', 'sStatus', '$',
             'sFixFor', 'sPersonAssignedTo',
             'sEmailAssignedTo'))
-            .each(function (key) {
+          .each(function (key) {
             var value = kase[key];
             bug[key] = _.isArray(value) && value.length === 1 ?
               bug[key] = value[0].trim() : // dereference
               value;
           });
-          bug._raw = kase;
-          return bug;
-        });
-        if (cases.length > 1) {
-          return cases;
-        }
-        return cases[0];
-      };
+        bug._raw = kase;
+        return bug;
+      });
+      if (cases.length > 1) {
+        return cases;
+      }
+      return cases[0];
+    }
+
     fields = cols.concat(DEFAULT_COLS).join(',');
     id = encodeURIComponent(id);
 
     if (!token) {
-      dfrd.reject(MODULE_ERRORS.undefined_token);
+      dfrd.reject(MODULE_ERRORS.undefinedToken);
     } else {
-      var url = format(URLs.edit, PROTOCOL, conf.host, token, id, fields);
+      url = format(URLs.edit, PROTOCOL, conf.host, token, id, fields);
       // Some work need to do, parameters .....
       Object.keys(parameters).forEach(function (k) {
         url += '&' + k + '=' + parameters[k];
@@ -499,9 +469,10 @@ var fogbugz = {
  * @constructor
  * @param {Object} obj Object representing Filter
  */
-var Filter = function Filter(obj) {
+function Filter(obj) {
   extend(this, obj);
-};
+}
+
 /**
  * Sets the current filter to be this Filter
  * @method setCurrent
@@ -517,9 +488,57 @@ Filter.prototype.setCurrent = function () {
  * @constructor
  * @param {Object} obj Object representing Case
  */
-var Case = function Case(obj) {
+function Case(obj) {
   extend(this, obj);
-};
+}
+
+
+/**
+ * Basically just asserts an empty response has no errors in it.
+ * @param {string} xml XML to parse
+ * @param {Q.defer} dfrd Q deferred object
+ */
+function _extractEmptyResponse(xml, dfrd) {
+  var parser = new xml2js.Parser();
+  parser.parseString(xml, function (err, res) {
+    if (err) {
+      dfrd.reject();
+      return MODULE_ERRORS.xmlParseError;
+    }
+    if (res.response.error) {
+      dfrd.reject(res.response.error);
+    }
+  });
+}
+
+/**
+ * Parses XML and returns JSON.
+ * @param {string} xml XML string
+ * @param {Deferred} dfrd The promise that we're parsing values of
+ * @returns {Object} JSON representation of XML
+ */
+function _parse(xml, dfrd) {
+  var parser = new xml2js.Parser();
+  var r;
+  parser.parseString(xml, function (err, res) {
+    if (err) {
+      dfrd.reject(MODULE_ERRORS.xmlParseError);
+      return;
+    }
+    if (res.response.error) {
+      dfrd.reject(res.response.error);
+      return;
+    }
+    r = res;
+  });
+  return r;
+}
+
+if (process.env.NODE_FOGBUGZ_CONFIG) {
+  conf = require(process.env.NODE_FOGBUGZ_CONFIG);
+} else {
+  conf = require('./fogbugz.conf.json');
+}
 
 module.exports = fogbugz;
 module.exports.Filter = Filter;

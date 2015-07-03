@@ -1,0 +1,11 @@
+options:
+  mask: '**/*.spec.js'
+  require:
+    - test/fixture
+  reportFormats:
+    - lcov
+    - text-summary
+  excludes:
+    - node_modules/**
+
+main: test/

@@ -17,4 +17,5 @@ npm-debug.log
 fogbugz.conf.json
 output
 node_modules
+coverage
 
