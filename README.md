@@ -1,4 +1,4 @@
-node-fogbugz [![npm version](https://badge.fury.io/js/fogbugz.svg)](http://badge.fury.io/js/fogbugz) [![Build Status](https://travis-ci.org/boneskull/node-fogbugz.png?branch=master)](https://travis-ci.org/boneskull/node-fogbugz) [![Code Climate](https://codeclimate.com/github/boneskull/node-fogbugz/badges/gpa.svg)](https://codeclimate.com/github/boneskull/node-fogbugz) [![Test Coverage](https://codeclimate.com/github/boneskull/node-fogbugz/badges/coverage.svg)](https://codeclimate.com/github/boneskull/node-fogbugz/coverage)
+# node-fogbugz [![npm version](https://badge.fury.io/js/fogbugz.svg)](http://badge.fury.io/js/fogbugz) [![Build Status](https://travis-ci.org/boneskull/node-fogbugz.png?branch=master)](https://travis-ci.org/boneskull/node-fogbugz) [![Code Climate](https://codeclimate.com/github/boneskull/node-fogbugz/badges/gpa.svg)](https://codeclimate.com/github/boneskull/node-fogbugz) [![Test Coverage](https://codeclimate.com/github/boneskull/node-fogbugz/badges/coverage.svg)](https://codeclimate.com/github/boneskull/node-fogbugz/coverage)
 
 Library providing FogBugz API functionality
 
