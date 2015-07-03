@@ -35,10 +35,10 @@
  });
  ```
  * @author Christopher Hiller <chiller@badwing.com>
- * @version 0.2.0
+ * @version 0.2.3
  * @license MIT
  */
-var pwd = process.env.PWD || process.cwd();
+var pwd = process.cwd();
 var request = require('request'),
   Q = require('q'),
   path = require('path'),
