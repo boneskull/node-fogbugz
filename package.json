@@ -1,6 +1,6 @@
 {
   "name": "fogbugz",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "FogBugz integration module",
   "license": "MIT",
   "author": {
