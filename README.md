@@ -2,9 +2,6 @@
 
 Library providing FogBugz API functionality
 
-> This is still in development as the API has not fully been built out yet, but
-I hope to get everything in place eventually.
-
 ## Installation
 
 ```shell
