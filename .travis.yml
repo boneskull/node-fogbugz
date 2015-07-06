@@ -7,7 +7,7 @@ node_js:
 sudo: false
 script: npm test
 after_script:
-- cat ./coverage/lcov.info | ./node_modules/.bin/codeclimate
+- cat ./coverage/lcov.info | ./node_modules/.bin/codeclimate-test-reporter
 env:
   global:
     secure: Cr3bWTtiArQ+RaGEVp3IbQEcZ0UhoqpDgKKGmOSEnY3UMhf50X6olmoBzN6TMsPVr94RpBg9DAaAt/8ijFlLC+yRRs0/6TguUEfiMCllAlvfj1iiMVnZbUGjSmD1w9EjTaknoBfvSmTsK9U65gcJfDo6DSboFsQwXrO47CqLWuc=
