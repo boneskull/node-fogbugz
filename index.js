@@ -251,7 +251,7 @@ var fogbugz = {
    * @method setCurrentFilter
    * @param {Filter|string} filter Filter object or string ID
    * @see class fogbugz.Filter
-   * @returns {Function|promise|Q.promise}
+   * @returns {Promise.<boolean>} True if success
    */
   setCurrentFilter: function setCurrentFilter(filter) {
     var token = cache.get('token');
@@ -282,7 +282,7 @@ var fogbugz = {
    * @param {string} query Query stirng
    * @param {array} [cols] Fields to pull
    * @param {number} [max] Number of cases to get at once
-   * @returns {Function|promise|Q.promise} Promise
+   * @returns {Promise.<(Array.<Case>|Case)>} Case or cases
    */
   search: function search(query, cols, max) {
     var url;
@@ -370,7 +370,8 @@ var fogbugz = {
    * @param {number} [id] -- the ixBug of a case that you want edit
    * @param {Object} [parameters] -- the parameters you want edit
    * @param {array} [cols] The columns you want returned about this case
-   * @returns {Function|promise|Q.promise} Promise
+   * @todo change return value; DRY
+   * @returns {Promise.<Array.<Case>>} Cases, though singular
    */
   editBug: function editBug(id, parameters, cols) {
     var token = cache.get('token');
@@ -456,7 +457,7 @@ var fogbugz = {
    * Gets a bug by ID
    * @param {string|number} id ID of bug
    * @param {number} [cols] Cols to pull
-   * @returns {Function|promise|Q.promise}
+   * @returns {Promise.<(Array.<Case>|Case)>} Case or cases
    */
   getBug: function getBug(id, cols) {
     return this.search(id, cols, 1);
@@ -476,7 +477,7 @@ function Filter(obj) {
 /**
  * Sets the current filter to be this Filter
  * @method setCurrent
- * @returns {Function|promise|Q.promise}
+ * @returns {Promise.<boolean>} True if successful
  */
 Filter.prototype.setCurrent = function () {
   return fogbugz.setCurrentFilter(this);

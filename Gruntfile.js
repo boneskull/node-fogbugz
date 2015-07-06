@@ -3,8 +3,8 @@
 'use strict';
 
 module.exports = function (grunt) {
-  var loadGruntConfig = require('load-grunt-config');
-  var pkg = grunt.file.readJSON('package.json'),
+  var loadGruntConfig = require('load-grunt-config'),
+    pkg = grunt.file.readJSON('package.json'),
 
     /**
      * Random bits of crap to send to the Grunt templates
