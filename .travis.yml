@@ -1,13 +1,15 @@
 language: node_js
 node_js:
 - iojs
-- "0.12"
-- "0.11"
-- "0.10"
+- '0.12'
+- '0.11'
+- '0.10'
 sudo: false
 script: npm test
 after_script:
 - cat ./coverage/lcov.info | ./node_modules/.bin/codeclimate-test-reporter
+- cat ./coverage/lcov.info | ./node_modules/.bin/codacy-coverage
 env:
   global:
-    secure: Cr3bWTtiArQ+RaGEVp3IbQEcZ0UhoqpDgKKGmOSEnY3UMhf50X6olmoBzN6TMsPVr94RpBg9DAaAt/8ijFlLC+yRRs0/6TguUEfiMCllAlvfj1iiMVnZbUGjSmD1w9EjTaknoBfvSmTsK9U65gcJfDo6DSboFsQwXrO47CqLWuc=
+  - secure: Cr3bWTtiArQ+RaGEVp3IbQEcZ0UhoqpDgKKGmOSEnY3UMhf50X6olmoBzN6TMsPVr94RpBg9DAaAt/8ijFlLC+yRRs0/6TguUEfiMCllAlvfj1iiMVnZbUGjSmD1w9EjTaknoBfvSmTsK9U65gcJfDo6DSboFsQwXrO47CqLWuc=
+  - secure: cRZspB2OmtfucwsGAmV5huc6i0vwnNXW2fnRH9lusPVFT39fipyV/TODRhJrCbH5k/amzGCWeZYHSeYj83AWb2+xZQ6HiQDaROxh3UwubjNuxAlbnIv8GXLiW/L6H8nQBl5mJramU2xXOxjCqyQFGPIsSyT+VOO06EzyLsvLYPo=
