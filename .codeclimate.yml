@@ -4,7 +4,8 @@ languages:
 engines:
   eslint:
     enabled: true
-paths:
+ratings: #Specifies which files/paths will be graded.
+  paths:
   - index.js
   - test/*.js
   - grunt/*.js
