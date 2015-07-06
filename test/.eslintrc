@@ -7,14 +7,14 @@ rules:
   camelcase : 0
   comma-style:
     - 2
-    - "last"
+    - last
   consistent-this:
     - 2
-    - "self"
+    - self
   consistent-return : 0
   func-style:
     - 2
-    - "declaration"
+    - declaration
   max-len:
     - 2
     - 80
@@ -25,7 +25,7 @@ rules:
   no-shadow : 0
   no-cond-assign:
     - 2
-    - "except-parens"
+    - except-parens
   no-else-return : 2
   no-floating-decimal : 2
   no-multiple-empty-lines:
@@ -42,17 +42,17 @@ rules:
   no-void : 2
   operator-assignment:
     - 2
-    - "always"
+    - always
   quotes:
     - 2
-    - "single"
+    - single
   radix : 2
   space-after-keywords:
     - 2
-    - "always"
+    - always
   space-before-blocks:
     - 2
-    - "always"
+    - always
   spaced-line-comment : 0
   valid-jsdoc:
     - 1
@@ -65,4 +65,3 @@ globals:
   Promise: true
   sinon: true
   expect: true
-
