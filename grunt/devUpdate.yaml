@@ -3,15 +3,9 @@ options:
 dev:
   options:
     semver: false
-dev-safe:
 production:
   options:
     semver: false
-    packages:
-      dependencies: true
-      devDependencies: true
-production-safe:
-  options:
     packages:
       dependencies: true
       devDependencies: true
