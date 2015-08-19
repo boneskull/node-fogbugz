@@ -47,6 +47,7 @@ var _ = require('lodash-node');
 var cache = require('memory-cache');
 
 var conf;
+var fogbugz;
 
 /**
  * Default protocol
@@ -98,7 +99,77 @@ var DEFAULT_COLS = [
  */
 var DEFAULT_MAX = 20;
 
-var fogbugz = {
+/**
+ * Parses XML and returns JSON.
+ * @param {string} xml XML string
+ * @param {Deferred} dfrd The promise that we're parsing values of
+ * @returns {Object} JSON representation of XML
+ */
+function _parse(xml, dfrd) {
+  var parser = new xml2js.Parser();
+  var r;
+  parser.parseString(xml, function(err, res) {
+    if (err) {
+      dfrd.reject(MODULE_ERRORS.xmlParseError);
+      return;
+    }
+    if (res.response.error) {
+      dfrd.reject(res.response.error);
+      return;
+    }
+    r = res;
+  });
+  return r;
+}
+
+/**
+ * Filter pseudoclass
+ * @class Filter
+ * @constructor
+ * @param {Object} obj Object representing Filter
+ */
+function Filter(obj) {
+  extend(this, obj);
+}
+
+/**
+ * Sets the current filter to be this Filter
+ * @method setCurrent
+ * @returns {Promise.<boolean>} True if successful
+ */
+Filter.prototype.setCurrent = function() {
+  return fogbugz.setCurrentFilter(this);
+};
+
+/**
+ * Case pseudoclass
+ * @class Case
+ * @constructor
+ * @param {Object} obj Object representing Case
+ */
+function Case(obj) {
+  extend(this, obj);
+}
+
+/**
+ * Basically just asserts an empty response has no errors in it.
+ * @param {string} xml XML to parse
+ * @param {Q.defer} dfrd Q deferred object
+ */
+function _extractEmptyResponse(xml, dfrd) {
+  var parser = new xml2js.Parser();
+  parser.parseString(xml, function(err, res) {
+    if (err) {
+      dfrd.reject();
+      return MODULE_ERRORS.xmlParseError;
+    }
+    if (res.response.error) {
+      dfrd.reject(res.response.error);
+    }
+  });
+}
+
+fogbugz = {
   MODULE_ERRORS: MODULE_ERRORS,
 
   /**
@@ -131,11 +202,10 @@ var fogbugz = {
       dfrd.reject(MODULE_ERRORS.undefinedToken);
     } else {
       request(format(URLs.logoff, PROTOCOL, conf.host, token),
-        function (err) {
+        function(err) {
           if (err) {
             dfrd.reject(err);
-          }
-          else {
+          } else {
             dfrd.resolve(true);
           }
         });
@@ -168,20 +238,18 @@ var fogbugz = {
 
     request(format(URLs.logon, PROTOCOL, conf.host, conf.username,
         conf.password),
-      function (err, res, body) {
-        var token;
+      function(err, res, body) {
+        var newToken;
         if (err) {
           dfrd.reject(err);
-        }
-        else {
-          token = extractToken(body);
-          if (!token) {
+        } else {
+          newToken = extractToken(body);
+          if (!newToken) {
             dfrd.reject(MODULE_ERRORS.unknown);
-          }
-          else {
-            cache.put('token', token);
+          } else {
+            cache.put('token', newToken);
             dfrd.resolve({
-              token: token,
+              token: newToken,
               cached: false
             });
           }
@@ -211,7 +279,7 @@ var fogbugz = {
       var r = _parse(xml, dfrd);
       if (r) {
         return r.response.filters[0].filter
-          .map(function (filter) {
+          .map(function(filter) {
             return new Filter({
               name: filter._.trim(),
               type: filter.$.type,
@@ -227,12 +295,11 @@ var fogbugz = {
       dfrd.reject(MODULE_ERRORS.undefinedToken);
     } else {
       request(format(URLs.listFilters, PROTOCOL, conf.host, token),
-        function (err, res, body) {
+        function(err, res, body) {
           var filters;
           if (err) {
             dfrd.reject(err);
-          }
-          else {
+          } else {
             filters = extractFilters(body);
             if (filters && filters.length) {
               dfrd.resolve(extractFilters(body));
@@ -243,7 +310,6 @@ var fogbugz = {
         });
     }
     return dfrd.promise;
-
   },
 
   /**
@@ -259,15 +325,13 @@ var fogbugz = {
     var id;
     if (!token) {
       dfrd.reject(MODULE_ERRORS.undefinedToken);
-    }
-    else {
+    } else {
       id = typeof filter === 'string' ? filter : filter.id;
       request(format(URLs.setCurrentFilter, PROTOCOL, conf.host, id,
-        token), function (err, res, body) {
+        token), function(err, res, body) {
         if (err) {
           dfrd.reject(err);
-        }
-        else {
+        } else {
           _extractEmptyResponse(body, dfrd);
           dfrd.resolve(true);
         }
@@ -293,11 +357,14 @@ var fogbugz = {
 
     function extractCases(xml) {
       var r = _parse(xml, dfrd);
-      if (!r || !r.response || !r.response.cases || !r.response.cases.length ||
+      if (!r ||
+        !r.response ||
+        !r.response.cases ||
+        !r.response.cases.length ||
         !r.response.cases[0].case) {
         return dfrd.reject(MODULE_ERRORS.bugNotFound);
       }
-      cases = r.response.cases[0].case.map(function (kase) {
+      cases = r.response.cases[0].case.map(function(kase) {
         var bug = new Case({
           id: kase.$.ixBug,
           operations: kase.$.operations.split(','),
@@ -321,10 +388,11 @@ var fogbugz = {
           .difference(_.keys(bug).concat('sTitle', 'sStatus', '$',
             'sFixFor', 'sPersonAssignedTo',
             'sEmailAssignedTo'))
-          .each(function (key) {
+          .each(function(key) {
             var value = kase[key];
             bug[key] = _.isArray(value) && value.length === 1 ?
-              bug[key] = value[0].trim() : // dereference
+              // dereference
+              bug[key] = value[0].trim() :
               value;
           });
         bug._raw = kase;
@@ -344,24 +412,22 @@ var fogbugz = {
     } else {
       url = format(URLs.search, PROTOCOL, conf.host, query, fields, max,
         token);
-      request(url, function (err, res, body) {
-        var cases;
+      request(url, function(err, res, body) {
+        var newCases;
         if (err) {
           dfrd.reject(err);
         } else {
-          cases = extractCases(body);
-          if (!cases) {
+          newCases = extractCases(body);
+          if (!newCases) {
             console.error(body);
             dfrd.reject(MODULE_ERRORS.unknown);
-          }
-          else {
-            dfrd.resolve(cases);
+          } else {
+            dfrd.resolve(newCases);
           }
         }
       });
     }
     return dfrd.promise;
-
   },
 
   /**
@@ -385,7 +451,7 @@ var fogbugz = {
       if (!r || !r.response || !r.response.case || !r.response.case.length) {
         return dfrd.reject(new Error(MODULE_ERRORS.xmlParseError));
       }
-      cases = r.response.case.map(function (kase) {
+      cases = r.response.case.map(function(kase) {
         var bug = new Case({
           id: kase.$.ixBug,
           operations: kase.$.operations.split(','),
@@ -409,10 +475,11 @@ var fogbugz = {
           .difference(_.keys(bug).concat('sTitle', 'sStatus', '$',
             'sFixFor', 'sPersonAssignedTo',
             'sEmailAssignedTo'))
-          .each(function (key) {
+          .each(function(key) {
             var value = kase[key];
             bug[key] = _.isArray(value) && value.length === 1 ?
-              bug[key] = value[0].trim() : // dereference
+              // dereference
+              bug[key] = value[0].trim() :
               value;
           });
         bug._raw = kase;
@@ -432,20 +499,20 @@ var fogbugz = {
     } else {
       url = format(URLs.edit, PROTOCOL, conf.host, token, id, fields);
       // Some work need to do, parameters .....
-      Object.keys(parameters).forEach(function (k) {
+      Object.keys(parameters).forEach(function(k) {
         url += '&' + k + '=' + parameters[k];
       });
-      request(url, function (err, res, body) {
-        var cases;
+      request(url, function(err, res, body) {
+        var newCases;
         if (err) {
           dfrd.reject(err);
         } else {
-          cases = extractCases(body);
-          if (!cases) {
+          newCases = extractCases(body);
+          if (!newCases) {
             console.error(body);
             dfrd.reject(MODULE_ERRORS.unknown);
           } else {
-            dfrd.resolve(cases);
+            dfrd.resolve(newCases);
           }
         }
       });
@@ -463,77 +530,6 @@ var fogbugz = {
     return this.search(id, cols, 1);
   }
 };
-
-/**
- * Filter pseudoclass
- * @class Filter
- * @constructor
- * @param {Object} obj Object representing Filter
- */
-function Filter(obj) {
-  extend(this, obj);
-}
-
-/**
- * Sets the current filter to be this Filter
- * @method setCurrent
- * @returns {Promise.<boolean>} True if successful
- */
-Filter.prototype.setCurrent = function () {
-  return fogbugz.setCurrentFilter(this);
-};
-
-/**
- * Case pseudoclass
- * @class Case
- * @constructor
- * @param {Object} obj Object representing Case
- */
-function Case(obj) {
-  extend(this, obj);
-}
-
-
-/**
- * Basically just asserts an empty response has no errors in it.
- * @param {string} xml XML to parse
- * @param {Q.defer} dfrd Q deferred object
- */
-function _extractEmptyResponse(xml, dfrd) {
-  var parser = new xml2js.Parser();
-  parser.parseString(xml, function (err, res) {
-    if (err) {
-      dfrd.reject();
-      return MODULE_ERRORS.xmlParseError;
-    }
-    if (res.response.error) {
-      dfrd.reject(res.response.error);
-    }
-  });
-}
-
-/**
- * Parses XML and returns JSON.
- * @param {string} xml XML string
- * @param {Deferred} dfrd The promise that we're parsing values of
- * @returns {Object} JSON representation of XML
- */
-function _parse(xml, dfrd) {
-  var parser = new xml2js.Parser();
-  var r;
-  parser.parseString(xml, function (err, res) {
-    if (err) {
-      dfrd.reject(MODULE_ERRORS.xmlParseError);
-      return;
-    }
-    if (res.response.error) {
-      dfrd.reject(res.response.error);
-      return;
-    }
-    r = res;
-  });
-  return r;
-}
 
 if (process.env.NODE_FOGBUGZ_CONFIG) {
   conf = require(process.env.NODE_FOGBUGZ_CONFIG);
