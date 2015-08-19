@@ -1,7 +1,7 @@
 {
   "name": "fogbugz",
   "version": "0.3.1",
-  "description": "FogBugz integration module",
+  "description": "Talks to FogBugz' icky XML API for you",
   "license": "MIT",
   "author": {
     "name": "Christopher Hiller",
