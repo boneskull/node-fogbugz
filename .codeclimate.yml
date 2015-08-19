@@ -1,10 +1,8 @@
-# Save as .codeclimate.yml (note leading .) in project root directory
 engines:
   eslint:
     enabled: true
-ratings: #Specifies which files/paths will be graded.
+ratings: 
   paths:
   - index.js
   - test/*.js
-  - grunt/*.js
 
