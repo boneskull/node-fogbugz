@@ -24,6 +24,7 @@
     "jit-grunt": "^0.9.1",
     "load-grunt-config": "^0.17.1",
     "mocha": "^2.2.5",
+    "pre-commit": "^1.1.1",
     "rewire": "^2.3.4",
     "sinon": "^1.15.4",
     "sinon-chai": "^2.8.0",
