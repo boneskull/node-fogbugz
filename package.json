@@ -5,8 +5,8 @@
   "license": "MIT",
   "author": {
     "name": "Christopher Hiller",
-    "email": "chiller@badwing.com",
-    "url": "http://badwing.com"
+    "email": "boneskull@boneskull.com",
+    "url": "https://boneskull.com"
   },
   "repository": "git://github.com/boneskull/node-fogbugz.git",
   "devDependencies": {
