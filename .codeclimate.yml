@@ -1,0 +1,13 @@
+engines:
+  eslint:
+    enabled: true
+
+ratings:
+  paths:
+    - index.js
+    - test/fogbugz.spec.js
+
+exclude_paths:
+  - grunt
+  - test/fixture.js
+  - Gruntfile.js
