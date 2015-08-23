@@ -4,10 +4,10 @@ engines:
 
 ratings:
   paths:
-    - index.js
-    - test/fogbugz.spec.js
+  - index.js
+  - test/fogbugz.spec.js
 
 exclude_paths:
-  - grunt
-  - test/fixture.js
-  - Gruntfile.js
+- grunt
+- test/fixture.js
+- Gruntfile.js
