@@ -14,6 +14,7 @@ Create a `fogbugz.conf.json` in your app's root directory.  It should look like 
 
 ```json
 {
+  "protocol": "https",
   "host": "zzz.fogbugz.com",
   "username": "zzz@yyy.com",
   "password": "Password1"
