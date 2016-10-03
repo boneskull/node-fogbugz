@@ -17,9 +17,10 @@
  this:
  ```json
  {
+   "protocol": "https",
    "host": "zzz.fogbugz.com",
    "username": "zzz@yyy.com",
- "password": "Password1"
+   "password": "Password1"
  }
  ```
  Usage
@@ -48,12 +49,6 @@ var cache = require('memory-cache');
 
 var conf;
 var fogbugz;
-
-/**
- * Default protocol
- * @type {string}
- */
-var PROTOCOL = 'https';
 
 /**
  * URL masks for the various API calls
@@ -201,7 +196,7 @@ fogbugz = {
     if (!token) {
       dfrd.reject(MODULE_ERRORS.undefinedToken);
     } else {
-      request(format(URLs.logoff, PROTOCOL, conf.host, token),
+      request(format(URLs.logoff, conf.protocol, conf.host, token),
         function(err) {
           if (err) {
             dfrd.reject(err);
@@ -236,7 +231,7 @@ fogbugz = {
       });
     }
 
-    request(format(URLs.logon, PROTOCOL, conf.host, conf.username,
+    request(format(URLs.logon, conf.protocol, conf.host, conf.username,
         conf.password),
       function(err, res, body) {
         var newToken;
@@ -285,7 +280,7 @@ fogbugz = {
               type: filter.$.type,
               id: filter.$.sFilter,
               url: format('%s://%s/default.asp?pgx=LF&ixFilter=%s',
-                PROTOCOL, conf.host, filter.$.sFilter)
+                conf.protocol, conf.host, filter.$.sFilter)
             });
           });
       }
@@ -294,7 +289,7 @@ fogbugz = {
     if (!token) {
       dfrd.reject(MODULE_ERRORS.undefinedToken);
     } else {
-      request(format(URLs.listFilters, PROTOCOL, conf.host, token),
+      request(format(URLs.listFilters, conf.protocol, conf.host, token),
         function(err, res, body) {
           var filters;
           if (err) {
@@ -327,7 +322,7 @@ fogbugz = {
       dfrd.reject(MODULE_ERRORS.undefinedToken);
     } else {
       id = typeof filter === 'string' ? filter : filter.id;
-      request(format(URLs.setCurrentFilter, PROTOCOL, conf.host, id,
+      request(format(URLs.setCurrentFilter, conf.protocol, conf.host, id,
         token), function(err, res, body) {
         if (err) {
           dfrd.reject(err);
@@ -349,11 +344,11 @@ fogbugz = {
    * @returns {Promise.<(Array.<Case>|Case)>} Case or cases
    */
   search: function search(query, cols, max) {
-    var url;
     var token = cache.get('token');
     var cases;
     var fields;
     var dfrd = Q.defer();
+    var requestOptions;
 
     function extractCases(xml) {
       var r = _parse(xml, dfrd);
@@ -370,7 +365,7 @@ fogbugz = {
           operations: kase.$.operations.split(','),
           title: kase.sTitle[0].trim(),
           status: kase.sStatus[0].trim(),
-          url: format('%s://%s/default.asp?%s', PROTOCOL, conf.host,
+          url: format('%s://%s/default.asp?%s', conf.protocol, conf.host,
             kase.$.ixBug),
           fixFor: kase.sFixFor[0].trim()
         });
@@ -410,9 +405,21 @@ fogbugz = {
     if (!token) {
       dfrd.reject(MODULE_ERRORS.undefinedToken);
     } else {
-      url = format(URLs.search, PROTOCOL, conf.host, query, fields, max,
-        token);
-      request(url, function(err, res, body) {
+      requestOptions = {
+        url: conf.protocol + '://' + conf.host + '/api.asp',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/form-data'
+        },
+        form: {
+          cmd: 'search',
+          token: token,
+          q: decodeURIComponent(query),
+          max: max,
+          cols: fields
+        }
+      };
+      request(requestOptions, function(err, res, body) {
         var newCases;
         if (err) {
           dfrd.reject(err);
@@ -457,7 +464,7 @@ fogbugz = {
           operations: kase.$.operations.split(','),
           title: kase.sTitle[0].trim(),
           status: kase.sStatus[0].trim(),
-          url: format('%s://%s/default.asp?%s', PROTOCOL, conf.host,
+          url: format('%s://%s/default.asp?%s', conf.protocol, conf.host,
             kase.$.ixBug),
           fixFor: kase.sFixFor[0].trim()
         });
@@ -497,7 +504,7 @@ fogbugz = {
     if (!token) {
       dfrd.reject(MODULE_ERRORS.undefinedToken);
     } else {
-      url = format(URLs.edit, PROTOCOL, conf.host, token, id, fields);
+      url = format(URLs.edit, conf.protocol, conf.host, token, id, fields);
       // Some work need to do, parameters .....
       Object.keys(parameters).forEach(function(k) {
         url += '&' + k + '=' + parameters[k];
@@ -536,6 +543,9 @@ if (process.env.NODE_FOGBUGZ_CONFIG) {
 } else {
   conf = require('./fogbugz.conf.json');
 }
+
+//Default to https if protocol not specified in conf (backwards compatibility)
+conf.protocol = conf.protocol || 'https';
 
 module.exports = fogbugz;
 module.exports.Filter = Filter;
