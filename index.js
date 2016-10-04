@@ -349,10 +349,10 @@ fogbugz = {
    * @returns {Promise.<(Array.<Case>|Case)>} Case or cases
    */
   search: function search(query, cols, max) {
-    var url;
     var token = cache.get('token');
     var cases;
     var fields;
+    var requestOptions;
     var dfrd = Q.defer();
 
     function extractCases(xml) {
@@ -410,9 +410,21 @@ fogbugz = {
     if (!token) {
       dfrd.reject(MODULE_ERRORS.undefinedToken);
     } else {
-      url = format(URLs.search, PROTOCOL, conf.host, query, fields, max,
-        token);
-      request(url, function(err, res, body) {
+      requestOptions = {
+        url: PROTOCOL + '://' + conf.host + '/api.asp',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/form-data'
+        },
+        form: {
+          cmd: 'search',
+          token: token,
+          q: decodeURIComponent(query),
+          max: max,
+          cols: fields
+        }
+      };
+      request(requestOptions, function(err, res, body) {
         var newCases;
         if (err) {
           dfrd.reject(err);
