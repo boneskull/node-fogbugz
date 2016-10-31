@@ -41,6 +41,6 @@
     "test": "grunt test"
   },
   "engines": {
-    "node": ">=0.10"
+    "node": ">= 4"
   }
 }
